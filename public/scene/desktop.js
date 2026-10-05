@@ -1490,7 +1490,7 @@ function setupPC(root){
   PC.tcv=document.createElement("canvas"); PC.tcv.width=PC_TW; PC.tcv.height=PC_TH;
   PC.tctx=PC.tcv.getContext("2d"); PC.tctx.fillStyle="#010302"; PC.tctx.fillRect(0,0,PC_TW,PC_TH);
   PC.tex=new THREE.CanvasTexture(PC.tcv); PC.tex.colorSpace=THREE.SRGBColorSpace; PC.tex.flipY=false; PC.tex.anisotropy=4;
-  PC.mesh.material=noGlints(new THREE.MeshPhysicalMaterial({color:"#070a08",roughness:.16,metalness:0,clearcoat:1,clearcoatRoughness:.05,emissive:"#ffffff",emissiveMap:PC.tex,emissiveIntensity:1.2}),PC.glint,.3);
+  PC.mesh.material=noGlints(new THREE.MeshPhysicalMaterial({color:"#070a08",roughness:.16,metalness:0,clearcoat:1,clearcoatRoughness:.05,emissive:"#ffffff",emissiveMap:PC.tex,emissiveIntensity:1.6}),PC.glint,.3);
   PC.mesh.castShadow=false;
   interact.set(PC.mesh,{kind:"pc",label:"USE THE COMPUTER"});   // (a click walks up to it: pcVisit)
   pcLoad(ENTRY?"saver":OPEN_OPTIONS?"options":atPC(pageFromUrl())?pageFromUrl():"saver");   // a #about, #online or #options link: the PC starts on that program, no boot (a fly-in: once the camera is there)

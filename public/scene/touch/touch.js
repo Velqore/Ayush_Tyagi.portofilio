@@ -73,22 +73,20 @@ body.tphone .edge{padding:14px 5px 12px;font-size:16px;background:rgba(14,13,19,
 @media (orientation:landscape){ body.tphone nav.menu{flex:0 1 auto;gap:6px;justify-content:flex-start} body.tphone #sound{margin-left:auto} }
 `; document.head.append(css);
 
-  // ---- 4. labels on the first tap
+  // ---- 4. labels on the first tap (single-tap mode: all groups pre-learned so every tap fires immediately)
   const tt=document.createElement("div"); tt.id="ttip"; tt.hidden=true; tt.innerHTML="<b></b><i>TAP AGAIN</i>"; document.body.append(tt);
-  const learned=new Set(); let pend=null, ttT=0;
+  // Pre-populate learned with every interactive group so the first tap always triggers the action directly.
+  const learned=new Set(["tape","vcr","btn","knob","pc","notepad","cd","lamp","floor","window","phone","rolodex","credits","coffee","calc","remote","eject"]); let pend=null, ttT=0;
   const groupOf=info=>info.kind==="tape"?"tape":info.kind==="vcr"||info.kind==="btn"||info.kind==="knob"?info.kind:info.label||info.kind;
   function inHand(info){ const k=info.kind;
     return k==="screen"||k==="knob"||k==="pc"&&(H.PC.zoom||H.atPC(H.state.page))||k==="cd"&&H.cd?.near||k==="calc"&&H.calc?.up||k==="notepad"&&H.padUp()||k==="credits"; }
   function gate(hit,e){
     if(!T.on||(e.pointerType!=="touch"&&!/[?&]touch=1/.test(location.search))) return false;
-    if(H.state.page==="posts") return false;   // Posts is the TV's glass up close: every tap is on purpose (Felix 21:47Z)
+    if(H.state.page==="posts") return false;   // Posts is the TV's glass up close: every tap is on purpose
     const info=H.interact.get(hit); if(!info||inHand(info)) return false;
     const g=groupOf(info); if(learned.has(g)) return false;
-    if(pend&&pend.g===g&&now()-pend.t<6000){ learned.add(g); pend=null; tt.hidden=true; return false; }
-    pend={g,t:now()}; H.gesture();
-    tt.firstChild.textContent=(info.label||info.kind).toUpperCase();
-    const x=Math.min(innerWidth-90,Math.max(90,e.clientX)); tt.style.left=x+"px"; tt.style.top=Math.max(70,e.clientY)+"px"; tt.hidden=false; ttT=now();
-    return true; }
+    // Fallback: first tap of any new unknown group also fires through immediately
+    learned.add(g); return false; }
   addEventListener("pointerdown",e=>{ if(!tt.hidden&&e.target!==H.canvas) tt.hidden=true; },{capture:true,passive:true});
 
   // ---- 1. stations

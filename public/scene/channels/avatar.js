@@ -29,7 +29,7 @@ const clamp = (x, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
 
 // ── Image asset ───────────────────────────────────────────────────────────────
 let avatarImg = null, imgReady = false;
-{
+if (typeof Image !== "undefined") {
   const img = new Image();
   img.src = "/scene/tex/ayush_nobg.png";
   img.onload = () => { avatarImg = img; imgReady = true; };

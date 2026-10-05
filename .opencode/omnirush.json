@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "workspace": {
+    "name": "omnirush.ai",
+    "createdAt": 1790872787130,
+    "preset": "starter"
+  },
+  "authorizedRoots": [
+    "/home/velqore/omnirush.ai"
+  ],
+  "reload": null
+}

@@ -1,0 +1,225 @@
+
+/* the artifact host adds this reset; the Ghost theme and local tests do not */
+[hidden]{display:none!important}
+:root{
+  color-scheme: dark;
+  --ground:#07080d;
+  --ink:#efe9dc;
+  --muted:#a29fae;
+  --panel:rgba(14,13,19,.66);
+  --line:rgba(255,255,255,.14);
+  --accent:#ffb867;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --osd:"VT323",ui-monospace,"Courier New",monospace;
+}
+*{box-sizing:border-box}
+html.bm-scene,html.bm-scene body{height:100%;margin:0;overflow:hidden;background:var(--ground);color:var(--ink);font-family:var(--display)}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;opacity:0;transition:opacity 1.2s ease}
+#gl.ready{opacity:1}
+/* the home view as a still while the room loads (tex/still.jpg, from tv/stillshot.cjs); the canvas fades in over it */
+#still{position:fixed;inset:0;background:var(--ground) 50% 50%/auto 100% no-repeat;opacity:0;transition:opacity .45s ease;pointer-events:none}
+#still.on{opacity:1}
+/* the VCR's on-screen display while the room loads, on the TV (Felix, 28 Sep 01:47Z, of the loader thread's directions: "i
+   like 1 on the tv with the still on"): LOADING over a bar of segments and a percentage (a tape counter until v28, which
+   didn't read as progress) play on the TV's glass in the still, as if the VCR were loading the tape, and nothing else covers
+   the room (until 28 Sep: in the middle of the window, on a dark scrim). --k is one pixel of the still (tex/still.jpg,
+   2560x1066, fitted to the height and centred). Its TV's glass is seen a little from the left and above, so it's no
+   rectangle: the screen is a box of 309.3x231.2 at x 1098, y 475.2, drawn onto the glass's corners in perspective (--warp,
+   from the loading script, which has the corners). The picture, its type and the glass scale with the screen (container
+   units). With no still (reduced data, a page picked while the room loads, a page's own link with reduced motion) the
+   screen glows on its own in the middle of the window (.free; .glide: it moves when the still comes or goes after it's
+   up). As the room comes in (.out), a burst of static takes the picture off and the glass and its light on the room fade,
+   the room's own TV under them; a screen on its own switches off like a CRT */
+#still,#osd{container-type:size;--k:calc(100cqh/1066)}
+#osd{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .35s ease}
+#osd.on{opacity:1}
+#osd .tv-scr{position:absolute;left:calc(50% - 182*var(--k));top:calc(475.2*var(--k));width:calc(309.3*var(--k));height:calc(231.2*var(--k));
+  border-radius:calc(4*var(--k));overflow:hidden;container-type:size;transform:var(--warp,none)}
+#osd.free .tv-scr{left:50%;top:48%;width:min(84vw,calc(58vh*4/3),600px);height:min(63vw,58vh,450px);transform:translate(-50%,-50%);border-radius:3%/4%;
+  box-shadow:0 0 0 1px rgba(0,0,0,.9),0 0 70px 8px rgba(70,105,255,.24),0 0 220px 60px rgba(40,70,220,.13)}
+#osd.glide .tv-scr{transition:left .6s,top .6s,width .6s,height .6s,transform .6s,border-radius .6s,box-shadow .6s;transition-timing-function:cubic-bezier(.45,0,.2,1)}
+#osd .tv-pic{position:absolute;inset:0;font-family:var(--osd);font-size:calc(100cqh/7.4);line-height:1;white-space:nowrap;color:#f4f5ff;
+  background:radial-gradient(115% 100% at 48% 42%,#5d7ddb 0,#4c6ac9 45%,#3a55b3 100%);
+  text-shadow:.07em .07em 0 rgba(4,8,50,.5),0 0 .3em rgba(210,222,255,.35);filter:blur(.3px);animation:tvflick 3.3s steps(1) infinite}
+#osd .tv-pic::after{content:"";position:absolute;inset:0;background:var(--noise);background-size:128px;opacity:.07;mix-blend-mode:overlay}
+#osd .tv-lb,#osd .tv-ch{position:absolute;top:7.5%;font-size:.6em;letter-spacing:.05em;transition:opacity .2s}
+#osd .tv-lb{left:6.5%}
+#osd .tv-ch{right:6.5%}
+#osd .tv-mid{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:.32em}
+#osd .tv-cta{display:none;font-size:1.05em;letter-spacing:.06em}
+#osd .tv-meter{display:flex;align-items:center;gap:.4em;font-size:.7em}
+#osd .bar{display:block;width:8em;height:.46em;background:repeating-linear-gradient(90deg,rgba(255,255,255,.26) 0 .31em,transparent .31em .4em)}
+#osd .bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,#f4f5ff 0 .31em,transparent .31em .4em)}
+#osd .pc{min-width:2.3em;font-variant-numeric:tabular-nums}
+#osd .tv-glass{position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 6cqh 1.5cqh rgba(4,8,36,.6);
+  background:linear-gradient(160deg,rgba(255,255,255,.11),rgba(255,255,255,0) 34%),repeating-linear-gradient(to bottom,rgba(8,14,60,.24) 0 1px,rgba(8,14,60,0) 1px 3px)}
+#osd .tv-glass::after{content:"";position:absolute;left:0;right:0;top:0;height:38%;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.06),rgba(255,255,255,0));animation:tvroll 7s linear infinite}
+#osd .tv-noise{position:absolute;inset:-20%;background:var(--noise);background-size:96px;opacity:0;mix-blend-mode:screen}
+/* the TV's light on the room around it: in the still, as a blend lightens only what's in its own layer (it fades as a whole,
+   and flickers inside) */
+#still .tv-spill{position:absolute;left:calc(50% - 588*var(--k));top:calc(212*var(--k));width:calc(1120*var(--k));height:calc(760*var(--k));mix-blend-mode:screen;transition:opacity .5s .3s}
+#still .tv-spill i{position:absolute;inset:0;background:radial-gradient(closest-side,rgba(90,130,255,.12),rgba(90,130,255,.05) 50%,rgba(90,130,255,0));animation:tvflick 3.3s steps(1) infinite}
+/* the room is in and waits for a click (Felix, 26 Sep 23:00Z): the screen stays at 100%, and above the bar it asks, blinking;
+   #enter, an invisible button over the room, takes the click (the top bar's links stay above it) */
+#osd.enter .tv-lb{opacity:0}
+#osd.enter .tv-cta{display:block;animation:softblink 1.4s steps(1) infinite}
+#osd.enter .tv-meter{opacity:.75}
+/* Enter muted (Felix, 30 Sep 01:40Z: "can I have "Enter muted" button on the tv?"): under the bar, a button the way a VCR's
+   menu draws one; the room comes in with the sound off (quiet). As wide as the screen between the margins of its CH 00 and
+   LOADING (02:01Z: "Make the button bigger (same width as tv). If possible i'd like a hover effect"): pointed at, a light
+   fill sweeps across it from the left, the menu's ▶ comes in at its left end, and its words turn the screen's blue. The
+   label on the TV takes the click (with a margin round it for a thumb), and a real button beside #enter, out of sight,
+   takes the keys and screen readers and lights the label the same way while it has the focus */
+#osd .tv-mute{display:none;position:relative;align-self:stretch;margin:.34em 6.5% 0;padding:.3em 0 .22em;text-align:center;font-size:.8em;
+  letter-spacing:.1em;border:.09em solid rgba(244,245,255,.8);border-radius:.12em;
+  background:linear-gradient(#f4f5ff,#f4f5ff) 0 0/0% 100% no-repeat,rgba(244,245,255,.07);
+  pointer-events:auto;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+  transition:background-size .24s cubic-bezier(.3,0,.2,1),color .16s,text-shadow .16s}
+#osd .tv-mute::before{content:"";position:absolute;inset:-.45em -.3em}
+#osd .tv-mute::after{content:"▶";position:absolute;left:.55em;top:50%;transform:translate(-.35em,-50%);opacity:0;transition:opacity .16s,transform .24s}
+#osd.enter .tv-mute{display:block}
+#osd .tv-mute:active,body:has(#enter-muted:focus-visible) #osd .tv-mute{background-size:100% 100%;color:#3a55b3;text-shadow:none}
+#osd .tv-mute:active::after,body:has(#enter-muted:focus-visible) #osd .tv-mute::after{opacity:1;transform:translate(0,-50%)}
+/* (only a mouse lights it by pointing: on an iPhone a tap that reveals content on :hover is only a hover, and no click comes) */
+@media (hover:hover){#osd .tv-mute:hover{background-size:100% 100%;color:#3a55b3;text-shadow:none}
+  #osd .tv-mute:hover::after{opacity:1;transform:translate(0,-50%)}}
+#osd.out .tv-mute{pointer-events:none}
+@media (prefers-reduced-motion:reduce){#osd .tv-mute,#osd .tv-mute::after{transition:none}}
+#osd.out .tv-noise{animation:tvstatic .45s steps(1) forwards}
+#osd.out .tv-pic{animation:tvout .45s steps(1) forwards}
+#osd.out .tv-glass,#still.out .tv-spill{opacity:0;transition:opacity .3s .15s}
+#osd.free.out .tv-scr{animation:tvoff .42s cubic-bezier(.5,0,.8,.4) forwards}
+#osd.free.out .tv-noise,#osd.free.out .tv-pic{animation:none}
+/* entering a window narrower than 1.3:1 the room comes in as the still shows it, quickly, and then the view pulls back
+   (stillOut) */
+#gl.pull{transition:opacity .45s ease}
+@keyframes tvflick{0%{opacity:1}6%{opacity:.93}8%{opacity:1}39%{opacity:.97}41%{opacity:1}74%{opacity:.95}76%{opacity:1}}
+@keyframes tvroll{from{transform:translateY(-100%)}to{transform:translateY(265%)}}
+@keyframes tvstatic{0%{opacity:.9;transform:translate(0,0)}17%{opacity:.75;transform:translate(-7%,4%)}34%{opacity:.85;transform:translate(5%,-6%)}51%{opacity:.6;transform:translate(-3%,7%)}68%{opacity:.35;transform:translate(6%,2%)}85%{opacity:.12}100%{opacity:0}}
+@keyframes tvout{0%{opacity:1;filter:brightness(1.6)}20%{opacity:.4}40%{opacity:0}100%{opacity:0}}
+@keyframes tvoff{0%{transform:translate(-50%,-50%);filter:brightness(1)}45%{transform:translate(-50%,-50%) scale(1,.012);filter:brightness(2.4)}80%{transform:translate(-50%,-50%) scale(.02,.012);filter:brightness(3);opacity:1}100%{transform:translate(-50%,-50%) scale(0,0);opacity:0}}
+@keyframes softblink{50%{opacity:.24}}
+/* (no container units, before Safari 16 and Chrome 105: the window's height) */
+@supports not (height:1cqh){
+  #still,#osd{--k:calc(100vh/1066)}
+  #osd .tv-pic{font-size:calc(231.2*var(--k)/7.4)} #osd.free .tv-pic{font-size:calc(min(63vw,58vh,450px)/7.4)}
+  #osd .tv-glass{box-shadow:inset 0 0 calc(13.9*var(--k)) calc(3.47*var(--k)) rgba(4,8,36,.6)}
+  #osd.free .tv-glass{box-shadow:inset 0 0 calc(min(63vw,58vh,450px)*.06) calc(min(63vw,58vh,450px)*.015) rgba(4,8,36,.6)}
+}
+#enter-muted{position:fixed;left:0;top:0;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#enter{position:fixed;inset:0;z-index:1;width:100%;height:100%;margin:0;padding:0;border:0;background:none;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+@media (prefers-reduced-motion:reduce){#osd *,#osd *::after,#still .tv-spill i{animation:none!important} #osd .tv-scr{transition:none!important} #osd.out{opacity:0}}
+.hud{position:fixed;z-index:2}
+html.bm-scene body::before{content:"";position:fixed;left:0;right:0;top:0;height:120px;z-index:1;pointer-events:none;background:linear-gradient(rgba(5,5,9,.55),rgba(5,5,9,0))}
+a{color:var(--ink);text-decoration-color:var(--accent);text-underline-offset:4px}
+a:hover{text-decoration-thickness:2px}
+
+/* top bar: name + nav, mirrors the monitor's input buttons */
+.top{top:calc(16px + env(safe-area-inset-top,0px));left:20px;right:20px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;pointer-events:none}
+.name{font-weight:850;font-stretch:125%;text-transform:uppercase;letter-spacing:.03em;font-size:16px;pointer-events:auto;cursor:pointer;background:none;border:0;color:var(--ink);padding:0;font-family:inherit}
+nav.menu{display:flex;gap:8px;flex-wrap:wrap;pointer-events:auto}
+nav.menu a{font-family:var(--osd);font-size:31px;letter-spacing:.07em;text-decoration:none;color:var(--muted);padding:3px 14px 1px;border-radius:4px;border:1px solid transparent}   /* 24px until v27 (Felix: bigger) */
+nav.menu a:hover{color:var(--ink)}
+nav.menu a[aria-current="page"]{color:#0b0b0d;background:var(--ink)}
+nav.menu a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+
+/* page card: a typed sheet that sits beside the desk object the camera flies to */
+.panel{--ink:#221e1a;--muted:#6f6657;--line:rgba(40,30,20,.16);--accent:#b3402c;
+  left:auto;right:20px;top:50%;width:min(max(360px,calc(min(72vh,640px) / 1.618)),calc(100% - 40px));max-height:min(72vh,640px);   /* golden: a full-height card is 1 : 1.618 */
+  width:min(max(360px,calc(min(72dvh,640px) / 1.618)),calc(100% - 40px));max-height:min(72dvh,640px);   /* the height the page sees (innerHeight, CARD_W), not the one behind a tablet's toolbar */
+  display:flex;flex-direction:column;color:var(--ink);font-family:"Courier Prime","Courier New",ui-monospace,monospace;
+  background-color:#f1ead8;background-repeat:no-repeat,repeat;
+  background-image:linear-gradient(rgba(255,255,255,.35),rgba(0,0,0,.04)),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .2 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  border-radius:2px;box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 18px 40px rgba(0,0,0,.55),0 3px 8px rgba(0,0,0,.35);
+  transform:translateY(-50%) rotate(-.6deg);opacity:1;visibility:visible;transition:opacity .35s,transform .5s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.panel[hidden]{display:flex!important;opacity:0;visibility:hidden;transform:translateY(calc(-50% + 14px)) rotate(-1.5deg);pointer-events:none;
+  transition:opacity .35s,transform .5s cubic-bezier(.2,.8,.2,1),visibility 0s .5s}
+.panel::before{content:"";position:absolute;left:50%;top:-9px;width:18px;height:18px;margin-left:-9px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#ff9a86,#b3402c 55%,#6d1f14);box-shadow:0 3px 4px rgba(0,0,0,.4)}
+.panel header{padding:18px 20px 8px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1.5px solid rgba(179,64,44,.5)}
+.panel h2{margin:0;font-family:var(--display);font-size:32px;line-height:.95;font-weight:880;font-stretch:62%;text-transform:uppercase;color:#1b1814}
+.panel .ch{font-size:13px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase}
+.panel .body{padding:12px 20px 18px;overflow:auto;overscroll-behavior:contain;font-size:14.5px;line-height:1.6;
+  background:repeating-linear-gradient(transparent 0 22.2px,rgba(60,90,150,.13) 22.2px 23.2px)}
+.panel .body p{margin:0 0 11px;max-width:62ch}
+.panel a{color:#1d3a8a;text-decoration-color:rgba(29,58,138,.4)}
+.panel .close{background:none;border:1px solid var(--line);color:var(--muted);font:inherit;font-size:12px;letter-spacing:.1em;border-radius:2px;padding:2px 8px;cursor:pointer}
+.panel .close:hover{color:var(--ink)}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.list li{border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.list button,.list a.row{all:unset;box-sizing:border-box;display:grid;grid-template-columns:40px 1fr;gap:2px 10px;padding:10px 4px;cursor:pointer;width:100%}
+.list .n{font-family:var(--osd);font-size:18px;color:var(--muted);grid-row:span 2}
+.list .t{font-weight:700;font-size:16px;line-height:1.3}
+.list .m{font-family:var(--osd);font-size:16px;color:var(--muted);letter-spacing:.04em}
+.list button:hover .t,.list a.row:hover .t{color:var(--accent)}
+.list button[aria-pressed="true"] .t{color:var(--accent)}
+.list button[aria-pressed="true"] .n::before{content:"▶ "}
+.list button:focus-visible,.list a.row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:4px}
+.list a.row.flash{background:rgba(255,214,90,.45);transition:background .2s}
+/* Posts: the TV's teletext is the list. Its card stays in the page for keyboards and screen readers, out of sight: the row
+   you tab or arrow to lights up on the screen instead. A sheet (Credits) opened over it shows as usual. */
+body.ttx #panel{left:0!important;top:0!important;width:1px;height:1px;max-height:none;overflow:hidden;clip-path:inset(50%);white-space:nowrap;transform:none;transition:none;box-shadow:none;pointer-events:none}
+body.ttx #panel .close{display:none}
+#plink{position:fixed;z-index:3;font-family:var(--osd);font-size:17px;letter-spacing:.06em;color:#0b0b0d;background:var(--ink);padding:1px 8px 0;border-radius:3px;transform:translate(12px,14px);white-space:nowrap;text-decoration:none;max-width:min(440px,calc(100vw - 40px));overflow:hidden;text-overflow:ellipsis}
+#plink:hover,#plink:focus-visible{background:var(--accent);outline:none}
+.list a.row{transition:background 1.2s}
+.sec{font-family:var(--osd);font-size:17px;color:var(--muted);letter-spacing:.1em;margin:14px 0 4px}
+.sec:first-child{margin-top:0}
+.detail{margin:4px 0 14px;padding:12px 12px 10px;border:1px solid var(--line);border-radius:3px;background:rgba(255,255,255,.38)}
+.detail h3{margin:0 0 4px;font-size:22px;font-stretch:72%;font-weight:850;text-transform:uppercase}
+.detail .m{font-family:var(--osd);font-size:17px;color:var(--accent)}
+.detail p{margin:6px 0 0}
+.am{font-style:italic}
+.panel .hbtns{display:flex;gap:6px;flex-shrink:0}
+.panel .close[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
+/* Work on a desktop: the yellow pad on the desk is the card (notepad/notepad.js). Its HTML stays in the page for keyboards and
+   screen readers, out of sight, as the teletext's does: the tape you tab to is marked on the pad. */
+body.padnote #panel{left:0!important;top:0!important;width:1px;height:1px;max-height:none;overflow:hidden;clip-path:inset(50%);white-space:nowrap;transform:none;transition:none;box-shadow:none;pointer-events:none}
+body.padnote #panel .close{display:none}
+/* the credits on a desktop: the open card of the card file behind the desk lamp floats up with them typed on it
+   (credits/credits.js). The sheet's HTML stays in the page, out of sight: the link you tab to is marked on the card. */
+body.credcard #panel{left:0!important;top:0!important;width:1px;height:1px;max-height:none;overflow:hidden;clip-path:inset(50%);white-space:nowrap;transform:none;transition:none;box-shadow:none;pointer-events:none}
+body.credcard #panel .close{display:none}
+/* Credits: what the licences ask for, small (on the sheet's ruled lines) */
+.cred{list-style:none;margin:0;padding:0;font-size:13px;line-height:23.2px}
+.cred0{margin:6px 0 0;font-size:12px;line-height:23.2px;color:var(--muted)}
+.cred0 a{color:inherit}
+
+.ctl{right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}
+.ctl .hint{font-family:var(--osd);font-size:17px;color:#d3cfdc;text-align:right;line-height:1.15;text-shadow:0 0 1px #000,0 0 2px #000,0 1px 1px #000,0 0 9px rgba(0,0,0,.8)}   /* outlined like VCR on-screen text, so it reads over the lit notepad */
+button.sound{pointer-events:auto;font:inherit;font-family:var(--osd);font-size:19px;letter-spacing:.06em;color:var(--ink);
+  background:rgba(20,18,24,.55);border:1px solid var(--line);border-radius:999px;padding:5px 14px 4px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ctl .btns{display:flex;gap:8px}
+button.sound[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+body.paneled .ctl .hint{display:none}
+body.ttx .ctl .hint{display:block}
+@media (min-width:761px){ body.cdz .ctl .hint{display:block} }   /* at the CD player: its keys */
+@media (min-width:761px){ body.calcup .ctl .hint{display:block} }   /* the calculator up: its keys */
+body.win .ctl .hint,body.pcnear .ctl .hint{opacity:0;visibility:hidden;transition:opacity .4s,visibility 0s .4s}   /* at the window: just the view */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body.zoomed .panel,body.pcnear:not(.sheet) .panel{opacity:0;visibility:hidden;transform:translateY(calc(-50% + 14px)) rotate(-1.5deg);pointer-events:none;transition:opacity .35s,transform .5s cubic-bezier(.2,.8,.2,1),visibility 0s .5s}
+body.ttx.zoomed #panel{opacity:1;visibility:visible}   /* Posts: its card is already a 1 px box out of sight, and a hidden one can't take focus, so on the zoomed TV ↑ ↓ and Enter would do nothing */
+#unzoom{display:none}
+body.zoomed #unzoom,body.pcnear #unzoom,body.padnote.paneled #unzoom,body.calcup #unzoom{display:inline-block}   /* the notepad or the calculator up: PUT DOWN … */
+body.zoomed .ctl #credits{display:none}
+#tip{position:fixed;z-index:3;pointer-events:none;font-family:var(--osd);font-size:17px;letter-spacing:.06em;color:#0b0b0d;background:var(--ink);padding:1px 7px 0;border-radius:3px;transform:translate(12px,14px);white-space:nowrap}
+#err{position:fixed;inset:0;display:grid;place-items:center;font-family:var(--osd);font-size:22px;color:var(--muted);text-align:center;padding:20px}
+@media (max-width:760px){
+  .panel{top:auto!important;left:12px!important;right:12px;width:auto;max-height:46%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:rotate(-.4deg)}
+  .panel[hidden]{transform:translateY(24px)}
+  body.paneled .ctl,body.paneled #osd{display:none}
+  .ctl .hint{display:none}
+  nav.menu a{font-size:21px;padding:2px 8px 1px}
+}
+body.debug .hud:not(.top){display:none}
+@media (prefers-reduced-motion:reduce){#gl,#still,.panel{transition:none}}
+@media (hover:none) and (pointer:coarse){
+  nav.menu,.ctl,.edge,#tstrip,#sound{transition:opacity .6s ease}
+  body:has(#gl:not(.ready)) :is(nav.menu,.ctl,.edge,#tstrip,#sound){opacity:0!important;visibility:hidden}
+}
+
+/* theme: keep hidden overlays hidden */
+[hidden]{display:none!important}

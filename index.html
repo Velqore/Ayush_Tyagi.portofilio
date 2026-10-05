@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" data-accent="blue">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ayush Tyagi — Forensics &amp; Digital Craft</title>
+  <meta name="theme-color" content="#07080d">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=VT323&family=Caveat:wght@600&family=Courier+Prime:wght@400;700&display=swap">
+  
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html { background: #07080d; }
+    .bm-fallback { color: #efe9dc; font: 18px/1.5 system-ui; padding: 40px; }
+    .bm-fallback a { color: #ffb867; }
+  </style>
+  <noscript><style>.bm-fallback{display:block!important}</style></noscript>
+
+  <meta name="description" content="Ayush Tyagi — Forensic science student at K.R. Mangalam University. Developer. Observer. Working on forensic AI, questioned documents, cryptography, and open-source systems.">
+  <meta property="og:site_name" content="Ayush Tyagi">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Ayush Tyagi — Forensics &amp; Digital Craft">
+  <meta property="og:description" content="A late-90s production workstation on a desk by a rainy window at night. Forensic science, digital craft, and curious minds.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ayush Tyagi — Forensics &amp; Digital Craft">
+  <meta name="twitter:description" content="Personal retro workstation portfolio for Ayush Tyagi (@Velqore).">
+</head>
+<body class="home-template">
+<div id="bm-root" data-assets="https://c96b3c59.berlin-monitor-scene.pages.dev"></div>
+
+<nav class="bm-fallback" aria-label="Site" style="display:none">
+  <h1>Ayush Tyagi</h1>
+  <p>Forensic science student at K.R. Mangalam University. Developer. Observer.</p>
+  <p>Connecting careful observation with digital forensics, cryptography, and intelligent tools.</p>
+  <p>
+    <a href="#about">About</a> · 
+    <a href="#work">Work</a> · 
+    <a href="#posts">Posts</a> · 
+    <a href="#online">Online</a> · 
+    <a href="https://github.com/Velqore">GitHub</a> · 
+    <a href="https://www.linkedin.com/in/ayush-tyagi-96b3b7350/">LinkedIn</a> · 
+    <a href="mailto:ayushtyagi5544@gmail.com">Email</a>
+  </p>
+</nav>
+
+<template id="bm-desktop">
+  <div id="still" aria-hidden="true"><div class="tv-spill"><i></i></div></div>
+  <div id="osd" aria-hidden="true">
+    <div class="tv-scr">
+      <div class="tv-pic">
+        <div class="tv-lb">▶▶ LOADING</div>
+        <div class="tv-ch">CH 00</div>
+        <div class="tv-mid">
+          <div class="tv-cta"></div>
+          <div class="tv-meter"><span class="bar"><i></i></span><span class="pc">0%</span></div>
+          <div class="tv-mute">ENTER MUTED</div>
+        </div>
+      </div>
+      <div class="tv-noise"></div>
+      <div class="tv-glass"></div>
+    </div>
+  </div>
+  <button id="enter" hidden aria-label="Enter the room"></button>
+  <button id="enter-muted" hidden>Enter the room with the sound off</button>
+
+  <canvas id="gl" aria-label="A late-90s production monitor on a desk by a rainy window at night. Its input buttons and the stack of tapes navigate the site."></canvas>
+
+  <div class="hud top">
+    <button class="name" id="home-link">Ayush Tyagi</button>
+    <nav class="menu" aria-label="Site">
+      <a href="#about" data-page="about">ABOUT</a>
+      <a href="#work" data-page="work">WORK</a>
+      <a href="#posts" data-page="posts">POSTS</a>
+      <a href="#online" data-page="online">ONLINE</a>
+    </nav>
+  </div>
+
+  <h1 class="sr">Ayush Tyagi</h1>
+  <p class="sr">Forensic science student at K.R. Mangalam University. Developer. Observer. Working on forensic AI, questioned documents, cryptography, and open-source systems.</p>
+
+  <section class="hud panel" id="panel" hidden aria-labelledby="p-title">
+    <header>
+      <div><div class="ch" id="p-ch">CH 01</div><h2 id="p-title">About</h2></div>
+      <div class="hbtns">
+        <button class="close" id="p-hide" aria-label="Hide the card, the tape plays on" hidden>HIDE</button>
+        <button class="close" id="p-close" aria-label="Back to home">HOME</button>
+      </div>
+    </header>
+    <div class="body" id="p-body"></div>
+  </section>
+
+  <div class="hud ctl">
+    <div class="hint" id="hint">C use computer · M use CD player · Z zoom TV · 1–6 monitor buttons</div>
+    <div class="btns">
+      <button class="sound" id="cardon" aria-label="Show the Work card" hidden>SHOW CARD · N</button>
+      <button class="sound" id="unzoom">BACK TO THE DESK · ESC</button>
+      <button class="sound" id="credits">CREDITS</button>
+      <button class="sound" id="sound" aria-pressed="false">SOUND OFF</button>
+    </div>
+  </div>
+  <div id="tip" hidden></div>
+  <a id="plink" hidden target="_blank" rel="noopener"></a>
+  <div id="err" hidden></div>
+  <div id="live" class="sr" aria-live="polite"></div>
+  <div id="pc-sr" class="sr" aria-live="polite"></div>
+</template>
+
+<ol id="bm-posts" class="bm-fallback" style="display:none">
+  <li><a href="https://www.linkedin.com/in/ayush-tyagi-96b3b7350/recent-activity/all/" data-date="02 Oct 2026">Forensic Science in the Digital Era</a></li>
+  <li><a href="https://pratyaksh-ai.vercel.app/" data-date="15 Aug 2026">Patent 2024/0103322A: AI in Questioned Documents</a></li>
+  <li><a href="https://www.linkedin.com/in/ayush-tyagi-96b3b7350/recent-activity/all/" data-date="10 Jul 2026">Internship Notes: Investigation at SIFS Lab</a></li>
+  <li><a href="https://www.linkedin.com/in/ayush-tyagi-96b3b7350/recent-activity/all/" data-date="25 Aug 2025">Beyond Evidence: Supreme Court Forensic Ecosystem</a></li>
+  <li><a href="https://aurexcyber.vercel.app/" data-date="14 Jan 2025">Building Aurex: Cryptography &amp; Secure Storage</a></li>
+  <li><a href="https://www.linkedin.com/in/ayush-tyagi-96b3b7350/recent-activity/all/" data-date="18 Nov 2024">OSINT Techniques for Forensic Investigators</a></li>
+  <li><a href="https://cyberrepo.dpdns.org/" data-date="05 Sep 2024">CyberRepo Hub: Curating Developer &amp; Security Tools</a></li>
+  <li><a href="https://www.linkedin.com/in/ayush-tyagi-96b3b7350/recent-activity/all/" data-date="20 Jun 2024">Why Observation is Everything: Connecting Details</a></li>
+</ol>
+
+<template id="bm-about">
+  <p>I’m a forensic science student at K.R. Mangalam University. Developer. Observer.</p>
+  <p>My interests span physical and digital forensics, questioned documents, evidence analysis, and open-source intelligence (OSINT)—connecting careful observation with the tools used to understand an investigation.</p>
+  <p>Alongside forensic science, I explore full-stack development with Python, JavaScript, and Java. My internships at SIFS Lab and Beyond Evidence have brought me closer to forensic practice and its relationship with the legal system.</p>
+  <p><em>Nothing is just a detail. I’m interested in what it reveals.</em></p>
+  <h2 id="experience">Experience</h2>
+  <p><strong>Forensic Science Intern</strong> — SIFS Lab (June—July 2026). Exploring the practice of forensic investigation, questioned documents, fingerprint analysis, and careful interpretation of evidence.</p>
+  <p><strong>Legal &amp; Forensic Intern</strong> — Beyond Evidence · Supreme Court of India (July—August 2025). A closer look at the relationship between forensic inquiry, chain-of-custody, legal practice, and the courtroom.</p>
+  <h2 id="education">Education</h2>
+  <p><strong>B.Sc. (Hons) Forensic Science</strong> — K.R. Mangalam University (2024–2027 · Expected graduation).</p>
+  <p><strong>Senior Secondary Schooling</strong> — K.S.K Academy (2010–2024).</p>
+  <h2 id="projects">Selected Projects</h2>
+  <p><a href="https://pratyaksh-ai.vercel.app/">Pratyaksh-AI</a> — Forensic AI platform covering cyber forensics, questioned documents, and fingerprint analysis. Patent application filed: 2024/0103322A.</p>
+  <p><a href="https://aurexcyber.vercel.app/">Aurex</a> — Secure communication &amp; collaboration platform designed around cryptography, protected storage, and authenticated interactions.</p>
+  <p><a href="https://cyberrepo.dpdns.org/">CyberRepo Hub</a> — Curated multi-ecosystem repository hub across cybersecurity, AI/ML, web dev, DevOps, and systems.</p>
+  <h2 id="connect">Connect</h2>
+  <p><a href="https://github.com/Velqore">GitHub</a> · <a href="https://www.linkedin.com/in/ayush-tyagi-96b3b7350">LinkedIn</a> · <a href="mailto:ayushtyagi5544@gmail.com">ayushtyagi5544@gmail.com</a></p>
+</template>
+
+<script>
+(function(){
+  var d=document, root=d.documentElement;
+  var rootEl = d.getElementById("bm-root");
+  var rawAssetBase = rootEl ? rootEl.dataset.assets : null;
+  var BM = window.__BM = {
+    page: "home",
+    everywhere: false,
+    tvPosts: true,
+    assetBase: rawAssetBase ? rawAssetBase.replace(/\/*$/, "/") + "3e11de40/" : null
+  };
+
+  BM.posts = [].map.call(d.querySelectorAll("#bm-posts a"), function(a){
+    return { t: a.textContent, u: a.href, d: a.dataset.date };
+  });
+  BM.postsA = BM.posts.map(function(p){ return [p.t, p.u, p.d]; });
+
+  BM.about = (function(){
+    var t = d.getElementById("bm-about"), out = [], sp = function(x){ return x.replace(/\s+/g, " ").trim(); };
+    if(!t) return out;
+    var para = function(el){
+      var text = "", links = [];
+      (function walk(n){
+        [].forEach.call(n.childNodes, function(c){
+          if(c.nodeType === 3){ text += c.nodeValue.replace(/\s+/g, " "); return; }
+          if(c.nodeType !== 1) return;
+          if(c.tagName === "BR"){ text += " "; return; }
+          var a = c.tagName === "A" && c.getAttribute("href"), at = text.length;
+          walk(c);
+          if(a && text.length > at) links.push([at, text.length, c.href]);
+        });
+      })(el);
+      var lead = text.length - text.replace(/^\s+/, "").length;
+      text = text.trim();
+      links = links.map(function(l){
+        return [Math.max(0, l[0] - lead), Math.min(text.length, l[1] - lead), l[2]];
+      }).filter(function(l){ return l[1] > l[0]; });
+      return links.length ? ["p", text, links] : ["p", text];
+    };
+    (function blocks(parent){
+      [].forEach.call(parent.children, function(el){
+        var tag = el.tagName;
+        if(/^H[1-6]$/.test(tag)) out.push(["h", sp(el.textContent)]);
+        else if(tag === "P"){ var b = para(el); if(b[1]) out.push(b); }
+        else if(tag === "UL" || tag === "OL") [].forEach.call(el.children, function(li, i){ out.push(["l", sp(li.textContent), tag === "OL" ? (i+1) + "." : "*"]); });
+        else if(tag === "BLOCKQUOTE") out.push(["q", sp(el.textContent)]);
+        else if(tag === "HR") out.push(["r"]);
+        else if(tag === "PRE") out.push(["c", el.textContent.replace(/\n$/, "")]);
+        else if(tag === "IMG") out.push(["i", el.getAttribute("alt") || ""]);
+        else if(tag === "FIGURE" || tag === "DIV" || tag === "SECTION"){
+          var img = el.querySelector("img");
+          if(img && !el.querySelector("p,h1,h2,h3,ul,ol,pre")) out.push(["i", img.getAttribute("alt") || ""]);
+          else blocks(el);
+        }
+      });
+    })(t.content);
+    return out;
+  })();
+
+  BM.profiles = [
+    ["GitHub", "https://github.com/Velqore", "github.com/Velqore"],
+    ["LinkedIn", "https://www.linkedin.com/in/ayush-tyagi-96b3b7350", "linkedin.com/in/ayush-tyagi-96b3b7350"],
+    ["Email", "mailto:ayushtyagi5544@gmail.com", "ayushtyagi5544@gmail.com"]
+  ];
+
+  var gl = false;
+  try {
+    var c = d.createElement("canvas");
+    gl = !!(window.WebGLRenderingContext && (c.getContext("webgl2") || c.getContext("webgl")));
+  } catch(e) {}
+
+  if(!gl) {
+    [].forEach.call(d.querySelectorAll(".bm-fallback"), function(e){ e.style.display = "block"; });
+    return;
+  }
+
+  root.classList.add("bm-scene", "bm-desktop");
+
+  var css = d.createElement("link");
+  css.rel = "stylesheet";
+  css.href = "/scene/desktop.css";
+  d.head.appendChild(css);
+
+  var mounted = false;
+  function mount() {
+    if(mounted) return;
+    mounted = true;
+    var deskContent = d.getElementById("bm-desktop").content.cloneNode(true);
+    d.getElementById("bm-root").appendChild(deskContent);
+
+    var b = d.createElement("script");
+    b.src = "/scene/boot.js";
+    b.async = false;
+    d.body.appendChild(b);
+
+    var s = d.createElement("script");
+    s.type = "module";
+    s.src = "/scene/desktop.js";
+    d.body.appendChild(s);
+  }
+
+  css.onload = css.onerror = mount;
+  setTimeout(mount, 3000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+.opencode
+assets/originals
+tests
+node_modules
+.git
+*.log

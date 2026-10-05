@@ -1,11 +1,11 @@
-// CHANNEL · AVATAR v5 — Interactive Ayush Tyagi Avatar
+// CHANNEL · AVATAR v6 — Authentic Interactive Ayush Tyagi Avatar
 // Features:
-// 1. High-resolution clean cutout of Ayush Tyagi (1024x588) with warm studio rim light
-// 2. 2.5D head and body parallax tracking cursor with natural breathing motion
-// 3. Dynamic photorealistic eyes (sclera, dark hazel iris, pupil, corneal catchlight) following cursor
-// 4. Natural blinking + Sleep mode when desk lamp is turned off (eyes close, head tilts, floating Zzz)
-// 5. Silent forensic telemetry HUD & typewriter bio (speech synthesis removed as requested)
-// 6. Styled CRT forensic/cyber workstation background
+// 1. Pristine high-resolution portrait of Ayush Tyagi (1024x588) with authentic studio rim light
+// 2. Pure 2.5D head and body parallax tracking cursor with natural breathing motion
+// 3. Natural tilt, depth perspective, and smooth lerping without any artificial eye filters
+// 4. Smooth sleep mode when desk lamp is turned off (head tilts down into sleep posture, calm breathing, floating Zzz)
+// 5. Silent forensic telemetry HUD & typewriter bio (speech synthesis completely removed)
+// 6. Styled CRT forensic/cyber workstation background with dynamic ambient back-glow
 
 "use strict";
 
@@ -39,17 +39,6 @@ let avatarImg = null, imgReady = false;
 const IMG_ORIG_W = 1024;
 const IMG_ORIG_H = 588;
 
-const LEFT_EYE_POLY = [
-  [418, 275], [438, 260], [465, 255], [488, 260],
-  [502, 268], [488, 278], [465, 282], [438, 280]
-];
-const RIGHT_EYE_POLY = [
-  [545, 252], [560, 240], [580, 235], [600, 240],
-  [616, 250], [600, 258], [580, 262], [560, 258]
-];
-const LEFT_PUPIL  = { x: 465, y: 265 };
-const RIGHT_PUPIL = { x: 580, y: 245 };
-
 // ── Self-Intro Script ─────────────────────────────────────────────────────────
 const LINES = [
   { ms:  1000, text: "Hey, I'm Ayush Tyagi.",           style: "title"  },
@@ -73,7 +62,7 @@ const LINES = [
 const LOOP_MS = 40000;
 
 // ── Draw Tech Cyber Background ────────────────────────────────────────────────
-function drawBackground(g, W, H, sleeping, clock) {
+function drawBackground(g, W, H, sleeping, curX, curY, clock) {
   const bg = g.createLinearGradient(0, 0, W, H);
   if (sleeping) {
     bg.addColorStop(0, "#01040a");
@@ -100,9 +89,11 @@ function drawBackground(g, W, H, sleeping, clock) {
     }
     g.restore();
 
-    // Ambient back-glow behind Ayush
-    const glow = g.createRadialGradient(W * 0.70, H * 0.45, 30, W * 0.70, H * 0.45, W * 0.45);
-    glow.addColorStop(0, "rgba(80, 160, 240, 0.15)");
+    // Dynamic ambient back-glow behind Ayush that gently follows cursor
+    const glowX = W * 0.70 + (curX - 0.5) * 40;
+    const glowY = H * 0.45 + (curY - 0.5) * 30;
+    const glow = g.createRadialGradient(glowX, glowY, 30, glowX, glowY, W * 0.45);
+    glow.addColorStop(0, "rgba(80, 160, 240, 0.16)");
     glow.addColorStop(0.4, "rgba(40, 90, 180, 0.07)");
     glow.addColorStop(1, "rgba(0, 0, 0, 0)");
     g.fillStyle = glow;
@@ -135,151 +126,8 @@ function drawBackground(g, W, H, sleeping, clock) {
   }
 }
 
-// ── Draw Realistic Eye with Sclera, Movable Iris, Pupil & Lid ──────────────────
-function drawEye(g, poly, pupil, curX, curY, blink, sleeping) {
-  g.save();
-
-  // 1. Clip exactly to eye opening
-  g.beginPath();
-  g.moveTo(poly[0][0], poly[0][1]);
-  for (let i = 1; i < poly.length; i++) {
-    g.lineTo(poly[i][0], poly[i][1]);
-  }
-  g.closePath();
-  g.clip();
-
-  const minX = Math.min(...poly.map(p => p[0]));
-  const maxX = Math.max(...poly.map(p => p[0]));
-  const minY = Math.min(...poly.map(p => p[1]));
-  const maxY = Math.max(...poly.map(p => p[1]));
-  const w = maxX - minX, h = maxY - minY;
-
-  // 2. Realistic eye white / sclera
-  const scleraGrad = g.createRadialGradient(pupil.x, pupil.y, 2, pupil.x, pupil.y, w * 0.75);
-  scleraGrad.addColorStop(0, "#f3ede7");
-  scleraGrad.addColorStop(0.7, "#dfd2c7");
-  scleraGrad.addColorStop(1, "#c4a79c");
-  g.fillStyle = scleraGrad;
-  g.fillRect(minX - 5, minY - 5, w + 10, h + 10);
-
-  // 3. Pupil & Iris movement tracking cursor
-  const maxDx = 6.0, maxDy = 3.6;
-  const irisDx = (curX - 0.5) * 2 * maxDx;
-  const irisDy = (curY - 0.5) * 2 * maxDy;
-
-  const ix = pupil.x + (sleeping ? 0 : irisDx);
-  const iy = pupil.y + (sleeping ? 1.5 : irisDy);
-  const irisR = 9.2;
-
-  // Outer iris with dark limbal ring
-  const irisGrad = g.createRadialGradient(ix, iy, 2, ix, iy, irisR);
-  irisGrad.addColorStop(0, "#190f07");
-  irisGrad.addColorStop(0.45, "#2d1a0e");
-  irisGrad.addColorStop(0.82, "#402616");
-  irisGrad.addColorStop(1, "#0d0704");
-
-  g.beginPath();
-  g.arc(ix, iy, irisR, 0, Math.PI * 2);
-  g.fillStyle = irisGrad;
-  g.fill();
-
-  // Central pupil (deep black)
-  g.beginPath();
-  g.arc(ix, iy, 4.0, 0, Math.PI * 2);
-  g.fillStyle = "#040201";
-  g.fill();
-
-  // Specular corneal catchlight (natural glint)
-  if (!sleeping) {
-    g.beginPath();
-    g.arc(ix - 2.4, iy - 2.0, 1.4, 0, Math.PI * 2);
-    g.fillStyle = "rgba(255, 255, 255, 0.92)";
-    g.fill();
-
-    g.beginPath();
-    g.arc(ix + 1.8, iy + 1.8, 0.8, 0, Math.PI * 2);
-    g.fillStyle = "rgba(210, 235, 255, 0.4)";
-    g.fill();
-  }
-
-  // Upper eyelid shadow cast over the eye
-  const shadowGrad = g.createLinearGradient(0, minY, 0, minY + h * 0.45);
-  shadowGrad.addColorStop(0, "rgba(45, 22, 16, 0.55)");
-  shadowGrad.addColorStop(1, "rgba(45, 22, 16, 0.0)");
-  g.fillStyle = shadowGrad;
-  g.fillRect(minX - 5, minY, w + 10, h * 0.45);
-
-  // 4. Eyelid closing (blink or sleep mode)
-  if (blink > 0.01) {
-    const lidY = minY + (h + 3) * blink;
-    g.fillStyle = "#cda390";
-    g.beginPath();
-    g.rect(minX - 5, minY - 5, w + 10, lidY - minY + 5);
-    g.fill();
-
-    // Crease
-    g.strokeStyle = "#8f5e4c";
-    g.lineWidth = 1.2;
-    g.beginPath();
-    g.moveTo(minX - 2, lidY - 1);
-    g.quadraticCurveTo(minX + w * 0.5, lidY + 1.2, maxX + 2, lidY - 1);
-    g.stroke();
-
-    // Dark eyelash contour
-    g.strokeStyle = "#1b110a";
-    g.lineWidth = 1.8;
-    g.beginPath();
-    g.moveTo(minX, lidY);
-    g.quadraticCurveTo(minX + w * 0.5, lidY + 2.0, maxX, lidY);
-    g.stroke();
-  }
-
-  g.restore();
-
-  // Subtle perimeter stroke to perfectly blend eye socket
-  g.save();
-  g.beginPath();
-  g.moveTo(poly[0][0], poly[0][1]);
-  for (let i = 1; i < poly.length; i++) g.lineTo(poly[i][0], poly[i][1]);
-  g.closePath();
-  g.strokeStyle = "rgba(40, 22, 15, 0.35)";
-  g.lineWidth = 0.8;
-  g.stroke();
-  g.restore();
-}
-
-// ── Glasses Reflection / Glint (reacts to cursor angle) ────────────────────────
-function drawGlassesGlint(g, curX, curY, sleeping) {
-  if (sleeping) return;
-  g.save();
-  const shiftX = (curX - 0.5) * 12;
-  const shiftY = (curY - 0.5) * 8;
-
-  // Left lens reflection
-  const gradL = g.createLinearGradient(420 + shiftX, 230 + shiftY, 500 + shiftX, 300 + shiftY);
-  gradL.addColorStop(0, "rgba(80, 200, 255, 0.06)");
-  gradL.addColorStop(0.5, "rgba(120, 240, 220, 0.14)");
-  gradL.addColorStop(1, "rgba(80, 200, 255, 0.0)");
-  g.fillStyle = gradL;
-  g.beginPath();
-  g.ellipse(460 + shiftX * 0.3, 270 + shiftY * 0.3, 34, 22, -0.05, 0, Math.PI * 2);
-  g.fill();
-
-  // Right lens reflection
-  const gradR = g.createLinearGradient(540 + shiftX, 220 + shiftY, 620 + shiftX, 280 + shiftY);
-  gradR.addColorStop(0, "rgba(80, 200, 255, 0.05)");
-  gradR.addColorStop(0.5, "rgba(120, 240, 220, 0.12)");
-  gradR.addColorStop(1, "rgba(80, 200, 255, 0.0)");
-  g.fillStyle = gradR;
-  g.beginPath();
-  g.ellipse(580 + shiftX * 0.3, 250 + shiftY * 0.3, 32, 20, -0.05, 0, Math.PI * 2);
-  g.fill();
-
-  g.restore();
-}
-
-// ── Draw Ayush with 2.5D Head & Body Tracking ─────────────────────────────────
-function drawAyushAvatar(g, W, H, curX, curY, blinkAmt, sleeping, clock) {
+// ── Draw Ayush with 2.5D Head & Body Tracking (Pure, Authentic Photo) ──────────
+function drawAyushAvatar(g, W, H, curX, curY, sleeping, clock) {
   if (!imgReady || !avatarImg) return;
 
   // Fit height to 96% of H, scale width proportionally
@@ -298,40 +146,27 @@ function drawAyushAvatar(g, W, H, curX, curY, blinkAmt, sleeping, clock) {
   const pivotX = destX + (510 * scale);
   const pivotY = destY + (480 * scale);
 
-  const headShiftX = (curX - 0.5) * (sleeping ? 4 : 18);
-  const headShiftY = (curY - 0.5) * (sleeping ? 3 : 12) + (sleeping ? 12 : 0);
-  const tiltAngle  = (curX - 0.5) * (sleeping ? 0.015 : 0.04) + (sleeping ? 0.025 : 0);
-  const breath     = Math.sin(clock / (sleeping ? 2600 : 1300)) * (sleeping ? 1.5 : 2.6);
+  // Smooth cursor-driven motion
+  const headShiftX = (curX - 0.5) * (sleeping ? 4 : 24);
+  const headShiftY = (curY - 0.5) * (sleeping ? 3 : 16) + (sleeping ? 18 : 0);
+  const tiltAngle  = (curX - 0.5) * (sleeping ? 0.015 : 0.045) + (sleeping ? 0.03 : 0);
+  const breath     = Math.sin(clock / (sleeping ? 2800 : 1400)) * (sleeping ? 1.5 : 2.8);
 
   g.translate(pivotX + headShiftX, pivotY + headShiftY + breath);
   g.rotate(tiltAngle);
   g.translate(-pivotX, -pivotY);
 
-  if (sleeping) g.globalAlpha = 0.55;
+  if (sleeping) g.globalAlpha = 0.52;
 
   // Soft ambient lighting behind silhouette
   if (!sleeping) {
-    g.shadowColor = "rgba(70, 160, 240, 0.20)";
+    g.shadowColor = "rgba(70, 160, 240, 0.22)";
     g.shadowBlur = 35;
   }
 
-  // Draw portrait
+  // Draw authentic photo cleanly without any artificial eye overlay
   g.drawImage(avatarImg, 0, 0, IMG_ORIG_W, IMG_ORIG_H, destX, destY, destW, destH);
   g.shadowBlur = 0;
-
-  // Scaled coordinates for dynamic eyes
-  g.save();
-  g.translate(destX, destY);
-  g.scale(scale, scale);
-
-  // Draw animated dynamic eyes
-  drawEye(g, LEFT_EYE_POLY, LEFT_PUPIL, curX, curY, blinkAmt, sleeping);
-  drawEye(g, RIGHT_EYE_POLY, RIGHT_PUPIL, curX, curY, blinkAmt, sleeping);
-
-  // Draw glasses lens reflection
-  drawGlassesGlint(g, curX, curY, sleeping);
-
-  g.restore();
 
   // Smooth fade at the bottom so t-shirt blends seamlessly into CRT bezel
   const fade = g.createLinearGradient(0, H - destH * 0.14, 0, H);
@@ -343,7 +178,7 @@ function drawAyushAvatar(g, W, H, curX, curY, blinkAmt, sleeping, clock) {
   g.restore();
 }
 
-// ── Forensic Telemetry HUD (Speech removed, silent telemetry) ─────────────────
+// ── Forensic Telemetry HUD ────────────────────────────────────────────────────
 function drawTelemetryHUD(g, W, H, clock, sleeping) {
   g.save();
   const startX = 32, startY = 48;
@@ -499,7 +334,7 @@ function drawStatusBar(g, W, H, sleeping) {
   if (!sleeping) {
     g.textAlign = "right";
     g.fillStyle = "rgba(80, 220, 160, 0.8)";
-    g.fillText("● LIVE · CURSOR TRACKING", W - 20, H - 12);
+    g.fillText("● LIVE · 2.5D PARALLAX TRACKING", W - 20, H - 12);
   }
   g.restore();
 }
@@ -513,7 +348,6 @@ export default {
   mount({ ctx: g, width: W, height: H }) {
     let dead = false, clock = 0;
     let curXs = 0.5, curYs = 0.5;
-    let blinkTimer = 0, nextBlink = 3000, blinkAmt = 0;
 
     function frame(_t, dt = 16) {
       if (dead) return;
@@ -529,30 +363,14 @@ export default {
       curXs += (clamp(raw.x) - curXs) * speed;
       curYs += (clamp(raw.y) - curYs) * speed;
 
-      // Natural blinking
-      if (sleeping) {
-        blinkAmt = Math.min(1, blinkAmt + dt / 200); // smooth eye close
-      } else {
-        blinkTimer += dt;
-        if (blinkTimer > nextBlink) {
-          blinkTimer = 0;
-          nextBlink = 3200 + Math.random() * 2500;
-        }
-        if (blinkTimer < 180) {
-          blinkAmt = Math.sin((blinkTimer / 180) * Math.PI);
-        } else {
-          blinkAmt = Math.max(0, blinkAmt - dt / 100);
-        }
-      }
-
       g.save();
       g.setTransform(1, 0, 0, 1, 0, 0);
 
       // 1. Cyber / Forensic CRT Background
-      drawBackground(g, W, H, sleeping, clock);
+      drawBackground(g, W, H, sleeping, curXs, curYs, clock);
 
-      // 2. Ayush Avatar with 2.5D Head & Body Tracking + Realistic Dynamic Eyes
-      drawAyushAvatar(g, W, H, curXs, curYs, blinkAmt, sleeping, clock);
+      // 2. Pure Authentic Ayush Avatar with 2.5D Head & Body Tracking
+      drawAyushAvatar(g, W, H, curXs, curYs, sleeping, clock);
 
       // 3. Forensic Telemetry HUD
       drawTelemetryHUD(g, W, H, clock, sleeping);

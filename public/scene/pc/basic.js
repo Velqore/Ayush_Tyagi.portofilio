@@ -90,9 +90,9 @@ const GL = (() => {
 })();
 
 const PHOSPHORS = {
-  green: { bg: [3, 10, 5], dim: [45, 160, 80], normal: [90, 255, 148], bright: [220, 255, 228] },
-  amber: { bg: [10, 6, 1], dim: [170, 100, 10], normal: [255, 192, 60], bright: [255, 240, 185] },
-  white: { bg: [6, 7, 8], dim: [120, 126, 132], normal: [225, 232, 236], bright: [255, 255, 255] },
+  green: { bg: [2, 8, 4], dim: [55, 180, 95], normal: [110, 255, 165], bright: [240, 255, 240] },
+  amber: { bg: [10, 6, 1], dim: [175, 105, 15], normal: [255, 198, 70], bright: [255, 245, 195] },
+  white: { bg: [5, 6, 7], dim: [130, 136, 142], normal: [235, 240, 244], bright: [255, 255, 255] },
 };
 const pack = c => (255 << 24) | (c[2] << 16) | (c[1] << 8) | c[0]; // ABGR as a small negative int: never boxed
 const mixc = (a, b, k) => a.map((v, i) => Math.round(v + (b[i] - v) * k));

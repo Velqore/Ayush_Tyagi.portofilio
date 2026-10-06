@@ -437,7 +437,7 @@ catch(e){ still?.remove(); $("#err").hidden=false; $("#err").textContent="This s
 // the room draws (DPR_MAX), 2 as before, 1.5 for Smooth; Auto steps down from 2 to floor.
 const PQ=(()=>{ const s=location.search, on=OPT_DEFS.phone_gfx.phone;
   const level=/[?&](?:gfx|phone)=(full|auto|smooth)\b/.exec(s)?.[1]||OPT.phone_gfx;
-  return {on,level,cap:level==="smooth"?1.5:2,floor:1.25,meter:/[?&]fps=1\b/.test(s)||OPT.phone_fps==="on",win:{n:0,late:0},stepT:0,tried:null,held:false,odd:false}; })();
+  return {on,level,cap:on?(level==="smooth"?1.25:1.5):(level==="smooth"?1.5:2),floor:1.15,meter:/[?&]fps=1\b/.test(s)||OPT.phone_fps==="on",win:{n:0,late:0},stepT:0,tried:null,held:false,odd:false}; })();
 // <<< perf/phone: pixels
 // >>> perf/mem: early
 // ---- Memory (vhs-tv/perf/mem). What the room lets go of: once it is built, its pictures are uploaded and the copies in
@@ -501,7 +501,7 @@ let pckeys=null;   // the PC keyboard's caps (pckeys/pckeys.js), once the room i
 let vcr=null;   // the VCR's cassette flap, once the room is in (createVCRDoor)
 const PHONE=()=>/[?&]touch=1/.test(location.search)||matchMedia("(hover: none) and (pointer: coarse)").matches&&Math.min(innerWidth,innerHeight)<540;
 const TTX_PER=()=>PHONE()?4:8;
-const padOn=()=>!!notepad&&(!mobile()||PHONE()), padUp=()=>padOn()&&notepad.up&&state.page==="work";
+const padOn=()=>!!notepad&&!mobile(), padUp=()=>padOn()&&notepad.up&&state.page==="work";
 // The credits, on a desktop, are the open card of the card file behind the desk lamp: it floats up while the sheet is open
 let credits=null;
 const credOn=()=>!!credits&&!mobile(), credUp=()=>credOn()&&state.sheet==="credits"&&credits.up;
@@ -1836,9 +1836,13 @@ scene.add(dust); noDepth.push(dust,city.rain.mesh);
 // ======================================================================= post: bloom, lens
 // AO and light are baked, so no GTAO; no depth of field either (it read as blur). MSAA on the
 // composer's target keeps edges crisp.
-const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(innerWidth*DPR,innerHeight*DPR,{type:THREE.HalfFloatType,samples:4}));
+const isMobileDev=(typeof PHONE==="function"&&PHONE())||(typeof mobile==="function"&&mobile())||(matchMedia("(hover: none) and (pointer: coarse)").matches&&Math.min(innerWidth,innerHeight)<540);
+const msaaSamples=isMobileDev?0:4;
+const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(innerWidth*DPR,innerHeight*DPR,{type:THREE.HalfFloatType,samples:msaaSamples}));
 composer.addPass(new RenderPass(scene,view));
-const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth/2,innerHeight/2),.28,.5,.88); composer.addPass(bloom);
+const bloomW=isMobileDev?Math.min(innerWidth/2,256):innerWidth/2;
+const bloomH=isMobileDev?Math.min(innerHeight/2,256):innerHeight/2;
+const bloom=new UnrealBloomPass(new THREE.Vector2(bloomW,bloomH),.28,.5,.88); composer.addPass(bloom);
 // One pixel that is not a number (some GPU dividing by zero in some shader) is black, and the bloom's blurs would spread it
 // into a stepped black box over half the screen, as on a big Mac screen with the view turned right. The bloom reads the room
 // through this sieve, and the grade passes such a pixel on as black: one dark pixel, no box. It tests the exponent bits,
@@ -2002,7 +2006,7 @@ function gfxTick(now,raw,busy,target){
 function touchDebug(){
   return {on:on=>{ if(on) fpsLine(true); return PQ.meter; },how:"The frame rate now shows along the top edge. FRAME RATE in OPTIONS hides it.",help:"show the frame rate"};
 }
-if(PQ.level==="smooth") gfxShadows(1024);
+if(PQ.level==="smooth"||PQ.on) gfxShadows(1024);
 if(PQ.meter) fpsLine(true);
 PERF.phone={get state(){ return {on:PQ.on,level:PQ.level,dpr:DPR,cap:PQ.cap,held:PQ.held,shadowMap:moon.shadow.mapSize.x,meter:PQ.meter,glow:PQ.on&&!TVA.sync?"gpu":"read"}; },
   level:v=>gfxLevel(v),meter:v=>fpsLine(v)};
@@ -2346,6 +2350,7 @@ function renderPanel(page){
   const fa=document.activeElement, keep=fa&&body.contains(fa)?(fa.dataset.tape!=null?`[data-tape="${fa.dataset.tape}"]`:fa.dataset.post!=null?`[data-post="${fa.dataset.post}"]`:null):null;
   $("#p-ch").textContent="CH "+String(idx).padStart(2,"0")+(page==="posts"?" · TELETEXT 100":"");
   $("#p-title").textContent=TITLES[page];
+  if(page==="about") body.innerHTML=aboutPanel();
   if(page==="work") body.innerHTML=workPanel();
   if(page==="posts") body.innerHTML=`<ul class="list">${POSTS.map((p,i)=>`<li><a class="row" href="${postHref(p)}" data-post="${i}"${ONSITE?"":` target="_blank" rel="noopener"`}><span class="n">${101+i}</span><span class="t">${esc(p.t)}</span><span class="m">${p.d.toUpperCase()}</span></a></li>`).join("")}</ul>`;
   body.scrollTop=0;
@@ -2358,16 +2363,129 @@ function renderPanel(page){
 }
 function refreshWork(){ notepad?.redraw(); if(state.page==="work"&&!state.sheet&&!panel.hidden) renderPanel("work"); }
 function live(msg){ const el=$("#live"); el.textContent=""; setTimeout(()=>el.textContent=msg,60); }
+function aboutPanel(){
+  return `<div class="about-hero">
+    <p class="lead">Forensic science student at K.R. Mangalam University · Developer · Observer</p>
+  </div>
+  <div class="bio-text">
+    <p>Connecting careful empirical observation with digital forensics, questioned documents, evidence analysis, open-source intelligence (OSINT), and applied cryptography.</p>
+    <p>Alongside forensic science, I build production-grade full-stack tools with Python, JavaScript, and Java. Internships at SIFS Lab and Beyond Evidence (Supreme Court of India) have deepened my understanding of evidence custody, forensic protocols, and courtroom presentation.</p>
+    <p class="motto"><em>"Nothing is just a detail. I’m interested in what it reveals."</em></p>
+  </div>
+  <div class="sec">EXPERIENCE (INTERNSHIPS)</div>
+  <ul class="list">
+    <li>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="t">Forensic Science Intern</span>
+          <span class="m">2026</span>
+        </div>
+        <div class="org">SIFS Lab</div>
+        <p>Forensic investigation, questioned documents analysis, fingerprint ridge pattern identification, and evidence examination.</p>
+      </div>
+    </li>
+    <li>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="t">Legal &amp; Forensic Intern</span>
+          <span class="m">2025</span>
+        </div>
+        <div class="org">Beyond Evidence · Supreme Court of India</div>
+        <p>Examining the intersection of forensic inquiry, chain-of-custody protocols, legal practice, and expert witness courtroom presentation.</p>
+      </div>
+    </li>
+  </ul>
+  <div class="sec">EDUCATION</div>
+  <ul class="list">
+    <li>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="t">B.Sc. (Hons) Forensic Science</span>
+          <span class="m">2024–2027</span>
+        </div>
+        <div class="org">K.R. Mangalam University (Expected 2027)</div>
+        <p>Specialization in criminalistics, forensic toxicology, questioned documents, digital forensics, and jurisprudence.</p>
+      </div>
+    </li>
+    <li>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="t">Senior Secondary Schooling</span>
+          <span class="m">2010–2024</span>
+        </div>
+        <div class="org">K.S.K Academy</div>
+        <p>Foundations in science, mathematical analysis, computing, and investigative observation.</p>
+      </div>
+    </li>
+  </ul>
+  <div class="sec">SELECTED PROJECTS</div>
+  <ul class="list">
+    <li>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="t">Pratyaksh-AI</span>
+          <span class="m">2024–NOW</span>
+        </div>
+        <p>Forensic AI platform covering cyber forensics, questioned documents, and automated fingerprint analysis. Patent application filed: <strong>2024/0103322A</strong>.</p>
+        <p><a href="https://pratyaksh-ai.vercel.app/" target="_blank" rel="noopener">pratyaksh-ai.vercel.app ↗</a></p>
+      </div>
+    </li>
+    <li>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="t">Aurex</span>
+          <span class="m">2024–NOW</span>
+        </div>
+        <p>Secure communication and collaboration platform designed around cryptography, protected storage, and authenticated interactions.</p>
+        <p><a href="https://aurexcyber.vercel.app/" target="_blank" rel="noopener">aurexcyber.vercel.app ↗</a></p>
+      </div>
+    </li>
+    <li>
+      <div class="entry">
+        <div class="entry-header">
+          <span class="t">CyberRepo Hub</span>
+          <span class="m">2024–NOW</span>
+        </div>
+        <p>Curated multi-ecosystem repository hub across cybersecurity, AI/ML, web dev, DevOps, and systems.</p>
+        <p><a href="https://cyberrepo.dpdns.org/" target="_blank" rel="noopener">cyberrepo.dpdns.org ↗</a></p>
+      </div>
+    </li>
+  </ul>
+  <div class="sec">CONNECT</div>
+  <div class="connect-links">
+    <p><a href="https://github.com/Velqore" target="_blank" rel="noopener">GitHub: @Velqore ↗</a></p>
+    <p><a href="https://www.linkedin.com/in/ayush-tyagi-96b3b7350" target="_blank" rel="noopener">LinkedIn: Ayush Tyagi ↗</a></p>
+    <p><a href="mailto:ayushtyagi5544@gmail.com">Email: ayushtyagi5544@gmail.com ↗</a></p>
+  </div>`;
+}
 function workPanel(){
-  const row=i=>`<li><button data-tape="${i}" aria-pressed="${state.tape===i}"><span class="n">${String(i+1).padStart(2,"0")}</span><span class="t">${esc(tapeInfo(i).t)}</span><span class="m">${esc(tapeInfo(i).y.toUpperCase())}</span></button></li>`;
-  const ids=TAPES.map((_,i)=>i), lists=`<div class="sec">EXPERIENCE</div><ul class="list">${ids.slice(0,EXP).map(row).join("")}</ul><div class="sec">EDUCATION</div><ul class="list">${ids.slice(EXP,JOBS).map(row).join("")}</ul><div class="sec">PROJECTS</div><ul class="list">${ids.slice(JOBS).map(row).join("")}</ul>`;
+  const row=i=>{
+    const t=tapeInfo(i);
+    return `<li><button data-tape="${i}" aria-pressed="${state.tape===i}"><span class="n">${String(i+1).padStart(2,"0")}</span><span class="t">${esc(t.t)}</span><span class="m">${esc(t.y.toUpperCase())}</span><span class="desc">${esc(t.d)}</span></button></li>`;
+  };
+  const ids=TAPES.map((_,i)=>i);
+  const lists=`<div class="sec">EXPERIENCE (INTERNSHIPS)</div><ul class="list">${ids.slice(0,EXP).map(row).join("")}</ul><div class="sec">EDUCATION</div><ul class="list">${ids.slice(EXP,JOBS).map(row).join("")}</ul><div class="sec">SELECTED PROJECTS</div><ul class="list">${ids.slice(JOBS).map(row).join("")}</ul>`;
   const cur=state.tape>=0?tapeInfo(state.tape):null;
   const st={playing:"NOW PLAYING",loading:"LOADING",stopped:"STOPPED",ejecting:"EJECTING"}[state.tapeState]||"IN THE VCR";
-  return (cur?`<div class="detail"><div class="m">${st} · TAPE ${String(state.tape+1).padStart(2,"0")}</div><h3>${esc(cur.t)}</h3><div class="m">${esc(cur.y)}</div><p>${esc(cur.d)}</p>${cur.links.map(l=>`<p><a href="${l[1]}" target="_blank" rel="noopener">${esc(l[0])} ↗</a></p>`).join("")}</div>`:"")+lists;   // (with no tape in, the lists start under the heading: Felix, 04:40Z, "Remove this intro text")
+  return (cur?`<div class="detail"><div class="m">${st} · TAPE ${String(state.tape+1).padStart(2,"0")}</div><h3>${esc(cur.t)}</h3><div class="m">${esc(cur.y)}</div><p>${esc(cur.d)}</p>${cur.links.map(l=>`<p><a href="${l[1]}" target="_blank" rel="noopener">${esc(l[0])} ↗</a></p>`).join("")}</div>`:"")+lists;
 }
-// HIDE and SHOW CARD are Work's card switch on a narrow screen. On a desktop the notepad is the card: a click puts it down,
-// and a click on it (or C, or a tape going in) brings it back up.
-function modeBtn(){ const on=state.page==="work"&&!state.sheet&&!padOn(); $("#p-hide").hidden=!on; $("#cardon").hidden=!(on&&workHidden); }
+// HIDE and SHOW CARD are Work and About's card switch.
+let aboutHidden=false;
+function modeBtn(){
+  const onWork=state.page==="work"&&!state.sheet&&!padOn();
+  const onAbout=state.page==="about"&&!state.sheet;
+  const on=onWork||onAbout;
+  $("#p-hide").hidden=!on;
+  const hiddenNow=onAbout?aboutHidden:workHidden;
+  $("#cardon").hidden=!(on&&hiddenNow);
+}
+function aboutCard(show){
+  if(state.page!=="about"||state.sheet||aboutHidden!==show) return;
+  aboutHidden=!show; document.body.classList.toggle("paneled",show);
+  if(show){ renderPanel("about"); panel.hidden=false; } else panel.hidden=true;
+  modeBtn();
+  live(show?"About me":"Card hidden");
+}
 function workCard(show){
   if(state.page!=="work"||state.sheet||workHidden!==show) return;   // shows a hidden card, hides a shown one
   workHidden=!show; document.body.classList.toggle("paneled",show);
@@ -2391,8 +2509,8 @@ function padClick(h){
 }
 const HINT_CALC="0–9 + − * / % · Enter equals · Del clear · Esc put it down";
 function setHint(){ $("#hint").innerHTML=calc?.up?HINT_CALC:cd?.near?HINT_CD:state.page==="posts"?HINT_TTX:state.page==="work"&&padOn()?HINT_PAD:HINT0; unzoomLabel(); }
-$("#p-hide").onclick=()=>{ gesture(); workCard(false); };
-$("#cardon").onclick=()=>{ gesture(); workCard(true); };
+$("#p-hide").onclick=()=>{ gesture(); if(state.page==="about") aboutCard(false); else workCard(false); };
+$("#cardon").onclick=()=>{ gesture(); if(state.page==="about") aboutCard(true); else workCard(true); };
 $("#cardon").textContent="SHOW CARD"+keyHint("N");
 // The address follows the card. Opening one from home adds a history entry, so the browser's Back closes it again.
 let backPending=false;
@@ -2432,11 +2550,11 @@ function go(page,{instant=false,silent=false,entry=false}={}){
   state.page=page; state.sheet=null; document.body.classList.remove("sheet");
   if(changed) calc?.lower();   // (the calculator goes back on the desk)
   const keepTV=(changed||atPC(page))&&tvProg()===was;   // and then the TV's picture stays as it is: no switch, no static
-  if(changed||!silent){ if(!keepTV) pageT=performance.now(); workHidden=PHONE()&&page==="work"; }   // (closing a sheet keeps Work's card tucked away)
+  if(changed||!silent){ if(!keepTV) pageT=performance.now(); workHidden=PHONE()&&page==="work"; aboutHidden=false; }   // (closing a sheet keeps Work's card tucked away)
   if(!entry) syncUrl(page,changed&&!silent&&prev==="home");   // (a fly-in's address is its page's already)
   document.querySelectorAll("nav.menu a").forEach(a=>a.toggleAttribute("aria-current",a.dataset.page===page)&&a.setAttribute("aria-current","page"));
   $("#p-close").textContent="HOME"; $("#p-close").setAttribute("aria-label","Back to home");
-  const pad=page==="work"&&padOn(), paneled=page!=="home"&&!atPC(page)&&!(page==="work"&&workHidden); document.body.classList.toggle("paneled",paneled);
+  const pad=page==="work"&&padOn(), paneled=(page!=="home"&&!atPC(page)&&!(page==="work"&&workHidden))||(page==="about"&&!aboutHidden); document.body.classList.toggle("paneled",paneled);
   const padWas=document.body.classList.contains("padnote");
   document.body.classList.toggle("ttx",page==="posts"); document.body.classList.toggle("padnote",pad); setHint();
   if(changed){ ttxFocus=ttxHover=-1; $("#plink").hidden=true; if(page==="posts") readSeen(); }
@@ -3049,13 +3167,13 @@ function shove(o,p,t){ const b=o.b; if(b.containsPoint(t)) return;
 // 2nd (4th), 144 Hz every 2nd (5th); 90 and 100 Hz draw every refresh, since every 2nd would be 45 or 50.
 let lastInput=-1e9, lastDraw=-1e9, lastRaf=-1e9, refreshMs=1000/60;
 for(const ev of ["pointerdown","pointermove","wheel","keydown","touchstart","touchmove"]) addEventListener(ev,()=>{ lastInput=performance.now(); },{passive:true,capture:true});
-const busyNow=now=>!!(fly||pull||tapeAnim||credits?.busy||notepad?.busy||cd?.busy||calc?.busy||pckeys?.busy||coffee?.busy||clock?.busy||vcr?.busy||settles.length||DBG.on||state.glitch>0||now-lastInput<2500||now-state.powerT<1600||!canvas.classList.contains("ready"));
+const busyNow=now=>!!(fly||pull||tapeAnim||credits?.busy||notepad?.busy||cd?.busy||calc?.busy||pckeys?.busy||coffee?.busy||clock?.busy||vcr?.busy||settles.length||DBG.on||state.glitch>0||now-lastInput<(PQ.on?900:2500)||now-state.powerT<1600||!canvas.classList.contains("ready"));
 const glc=renderer.getContext(); let preFence=null;
 function frame(now){
   requestAnimationFrame(frame);
   if(MEM.lost) return;   // the browser took the room's graphics away: the reload card is up (perf/mem)
   const gap=now-lastRaf; lastRaf=now; if(gap>3&&gap<50) refreshMs+=(gap-refreshMs)*.05;   // hidden tabs and long stalls aside
-  const busy=busyNow(now), n=Math.max(1,Math.round((busy?1000/60:1000/30)/refreshMs-.2));
+  const busy=busyNow(now)&&(!PQ.on||(panel.hidden&&!state.sheet)), n=Math.max(1,Math.round((busy?1000/60:1000/30)/refreshMs-.2));
   if(now-lastDraw<n*refreshMs-2.5) return;   // the margin keeps rAF jitter from skipping a refresh we meant to draw
   if(gated&&now-lastDraw<250) return;   // (at the gate the room is hidden: four frames a second keep it warm)
   if(holdDraw&&now-holdT<8000) return;   // (built, the room waits for its shaders and the loading display: osdPaint)

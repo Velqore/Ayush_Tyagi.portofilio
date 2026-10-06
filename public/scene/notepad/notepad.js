@@ -113,7 +113,7 @@ export function createNotepad(THREE, ctx){
   const TOP=Math.round(CH*.12), RULE=Math.round(1.1*PXCM), MARGIN=Math.round(2.25*PXCM), LEFT=MARGIN+28, RIGHT=CW-66;
   const cv=document.createElement("canvas"); cv.width=CW; cv.height=CH;
   const inkCv=document.createElement("canvas"); inkCv.width=CW; inkCv.height=CH;
-  const tex=new THREE.CanvasTexture(cv); tex.flipY=false; tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=ctx.anisotropy||8;
+  const tex=new THREE.CanvasTexture(cv); tex.flipY=false; tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=16; tex.generateMipmaps=true; tex.minFilter=THREE.LinearMipmapLinearFilter; tex.magFilter=THREE.LinearFilter;
   const rng=seed=>()=>((seed=Math.imul(seed^seed>>>15,seed|1)+0x6D2B79F5|0,((seed^seed>>>7)>>>0)/4294967296));
   const hash=s=>{ let h=2166136261; for(const ch of String(s)) h=Math.imul(h^ch.charCodeAt(0),16777619); return h>>>0; };
   // legal-pad yellow (the pad's own texture), fibres and a faint mottle, the printed rules and the red double margin
@@ -127,12 +127,12 @@ export function createNotepad(THREE, ctx){
     const gt=g.createLinearGradient(0,0,0,46); gt.addColorStop(0,"rgba(110,70,0,.18)"); gt.addColorStop(1,"rgba(110,70,0,0)"); g.fillStyle=gt; g.fillRect(0,0,CW,46);
     return c; })();
 
-  const INK="#1b2a5a", RED="#b3402c";
+  const INK="#101c3d", RED="#b3402c";
   const FONT=px=>`600 ${px}px Caveat, "Segoe Print", "Bradley Hand", cursive`;
-  // a line of handwriting: never quite level, never quite on the rule, and pressed a little harder than the font
-  function hand(g,text,x,y,px,{color=INK,alpha=.94,align="left",seed=text}={}){
-    const r=rng(hash(seed)); g.save(); g.font=FONT(px); g.fillStyle=g.strokeStyle=color; g.globalAlpha=alpha; g.textAlign=align; g.lineWidth=px*.02; g.lineJoin="round";
-    g.translate(x+(r()-.5)*4,y+(r()-.5)*3); g.rotate((r()-.5)*.012); g.fillText(text,0,0); g.strokeText(text,0,0);
+  // a line of handwriting: clean, sharp, resting naturally on the rule
+  function hand(g,text,x,y,px,{color=INK,alpha=.98,align="left",seed=text}={}){
+    const r=rng(hash(seed)); g.save(); g.font=FONT(px); g.fillStyle=color; g.globalAlpha=alpha; g.textAlign=align;
+    g.translate(x+(r()-.5)*1.8,y+(r()-.5)*1.2); g.rotate((r()-.5)*.005); g.fillText(text,0,0);
     const w=g.measureText(text).width; g.restore(); return w; }
   function fit(g,text,px,maxW){ g.font=FONT(px); const w=g.measureText(text).width; return w>maxW?Math.floor(px*maxW/w):px; }
   function wrap(g,text,px,maxW){ g.font=FONT(px); const out=[]; let line="";

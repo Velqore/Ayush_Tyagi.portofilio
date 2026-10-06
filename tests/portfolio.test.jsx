@@ -67,4 +67,17 @@ describe('Ayush Tyagi Retro Workstation Portfolio', () => {
       expect(fs.existsSync(fullPath)).toBe(true)
     }
   })
+
+  it('provides crystal clear About and Work text panels with rich descriptions', () => {
+    expect(desktopJs).toContain('function aboutPanel')
+    expect(desktopJs).toContain('Patent application filed')
+    expect(desktopJs).toContain('CyberRepo Hub')
+    expect(desktopJs).toContain('class="desc"')
+  })
+
+  it('configures lightweight mobile performance optimizations', () => {
+    expect(desktopJs).toContain('msaaSamples=isMobileDev?0:4')
+    expect(desktopJs).toContain('Math.min(innerWidth/2,256)')
+    expect(desktopJs).toContain('cap:on?(level==="smooth"?1.25:1.5):(level==="smooth"?1.5:2)')
+  })
 })

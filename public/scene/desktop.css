@@ -202,6 +202,8 @@ body.credcard #panel .close{display:none}
 .cred{list-style:none;margin:0;padding:0;font-size:13px;line-height:23.2px}
 .cred0{margin:6px 0 0;font-size:12px;line-height:23.2px;color:var(--muted)}
 .cred0 a{color:inherit}
+.cred-thanks{color:var(--accent)!important;font-style:italic}
+.cred-thanks a{color:var(--accent)!important;text-decoration-color:rgba(179,64,44,.5)}
 
 .ctl{right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}
 .ctl .hint{font-family:var(--osd);font-size:17px;color:#d3cfdc;text-align:right;line-height:1.15;text-shadow:0 0 1px #000,0 0 2px #000,0 1px 1px #000,0 0 9px rgba(0,0,0,.8)}   /* outlined like VCR on-screen text, so it reads over the lit notepad */

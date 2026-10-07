@@ -600,7 +600,7 @@ function createPC(opts, V) {
     if (f.n <= 0) return false;
     const sx = W / LW, sy = H / LH;
     const ox = Math.floor(f.x0 * sx), oy = Math.floor(f.y0 * sy), ow = Math.ceil(f.x1 * sx) - ox, oh = Math.ceil(f.y1 * sy) - oy;
-    out.setTransform(1, 0, 0, 1, 0, 0); out.globalAlpha = 1; out.imageSmoothingEnabled = true;
+    out.setTransform(1, 0, 0, 1, 0, 0); out.globalAlpha = 1; out.imageSmoothingEnabled = false;
     f.n--;
     if (f.n > 0 && opts.persistence !== false) {
       out.globalCompositeOperation = "source-over";

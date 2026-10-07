@@ -1,10 +1,14 @@
-// Built by ghost-theme/build.py from vhs-tv sources. Do not edit here.
+// Built by ghost-theme/build.py from vhs-tv sources. Time-drift patch applied for slow-CDN resilience.
 
 // The loading display (optimized for mobile and high-speed desktop booting).
 // Streams scene geometry and textures with accurate byte counts and zero artificial lag.
 (()=>{ const el=document.getElementById("osd"), pc=el&&el.querySelector(".pc"), bar=el&&el.querySelector(".bar i"); if(!pc||!bar) return;
   const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-  const LOAD_BYTES = isMobile ? 12.8e6 : 13.8e6, FILE = 120e3, SEGS = 20, DL = .85, STEPS = [0, 0, .8, .88, .95], STEP = isMobile ? .16 : .09, WAIT = isMobile ? 30 : 60;
+  const LOAD_BYTES = isMobile ? 10.6e6 : 10.6e6, FILE = 120e3, SEGS = 20, DL = .85, STEPS = [0, 0, .8, .88, .95], STEP = isMobile ? .16 : .09, WAIT = isMobile ? 30 : 60;
+  // DRIFT: when the CDN is cold/slow (e.g. bin0.json 8 MB takes 10-25 s TTFB from India) the byte-driven progress
+  // stalls at ~5%.  A slow time-based floor creeps 0→40% over ~20 s so the bar always shows life.  Real bytes dominate
+  // when they arrive fast; the drift is capped at 0.40 so it never overshoots the meaningful 80–95% range.
+  const DRIFT_RATE = 0.020, DRIFT_CAP = 0.40;  // fraction/s, max fraction
   let got=0, streamed=0, step=0, shown=0, on=false, fin=false, text="0%", waits=[], last=performance.now(); const t0=last;
   const at=location.hash.slice(1)||(window.__BM&&window.__BM.pageAt?window.__BM.pageAt(location.pathname):""), WAIT_STILL = isMobile ? 400 : 800,
     want=!navigator.connection?.saveData&&(at===""||at==="home"||at!=="debug"&&!matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -34,8 +38,11 @@
       still=document.getElementById("still"), lit=!!still&&still.classList.contains("on");
     if(done||err&&!err.hidden){ fin=true; if(done) show(1); for(const w of waits) setTimeout(w.r,0); waits=[]; removeEventListener("resize",warp);
       if(done&&on){ el.classList.add("out"); still?.classList.add("out"); setTimeout(()=>el.remove(),1000); } else { el.classList.remove("on"); setTimeout(()=>el.remove(),600); } return; }
-    const dt=Math.min(.5,Math.max(0,now-last)/1000), lo=inside?1:Math.max(DL*Math.min(1,(streamed+got)/LOAD_BYTES),STEPS[step]),
-      hi=inside?1:step>3?.99:step>1?STEPS[step+1]-.01:Math.min(DL,lo+.03); last=now;
+    const dt=Math.min(.5,Math.max(0,now-last)/1000),
+      drift=Math.min(DRIFT_CAP, DRIFT_RATE*(now-t0)/1000),   // slow time-based floor: 0→40% over ~20 s
+      bytesFrac=DL*Math.min(1,(streamed+got)/LOAD_BYTES),
+      lo=inside?1:Math.max(bytesFrac, drift, STEPS[step]),
+      hi=inside?1:step>3?.99:step>1?STEPS[step+1]-.01:Math.min(DL,lo+.05); last=now;
     shown=inside?1:shown<lo?Math.min(lo,shown+Math.min(STEP,Math.max(.6,(lo-shown)*10)*dt)):shown+Math.max(0,hi-shown)*(1-Math.exp(-dt/0.6)); show(shown); settle();
     if(!on&&(inside||lit||now-t0>(want&&still?WAIT_STILL:600))){ on=true; el.classList.toggle("free",!lit); el.classList.add("on"); }
     else if(on&&el.classList.contains("free")===lit){ el.classList.add("glide"); el.classList.toggle("free",!lit); }

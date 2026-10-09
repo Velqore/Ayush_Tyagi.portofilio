@@ -422,11 +422,7 @@ function pullStep(dt){   // (in the loop, on the view as the camera left it)
   if(dv>1e-6) view.position.sub(controls.target).multiplyScalar((FRAMES.home.d+(dv-FRAMES.home.d)*e)/dv).add(controls.target);
   view.fov=FOV+(view.fov-FOV)*e;
   if(e>=1){ pull=null; canvas.classList.remove("pull"); } }
-if(still&&(ENTRY||pageFromUrl()==="home"&&(location.hash===""||location.hash==="#home"))&&!navigator.connection?.saveData){
-  const im=new Image(); im.fetchPriority="high"; im.decoding="async";
-  im.onload=()=>{ if(still.isConnected&&!canvas.classList.contains("ready")){ still.style.backgroundImage=`url("${im.src}")`; still.classList.add("on"); } };
-  im.src="/scene/tex/still.jpg";
-} else stillOff();   // (the loading display may have shown it already: a #hash the room doesn't open at home; it fades)
+stillOff();   // (the loading display may have shown it already: a #hash the room doesn't open at home; it fades)
 let renderer;
 try{ renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:"high-performance"}); }
 catch(e){ still?.remove(); $("#err").hidden=false; $("#err").textContent="This scene needs WebGL, which isn't available in this browser."; throw e; }
@@ -3095,7 +3091,10 @@ let revealNext=false, gated=false;
 // one brings the sound (gesture()) and the room fades in, so the home film starts with its voice; the click itself does nothing
 // else, except on a nav link, which goes on to its page. While it waits the hidden room draws a few frames a second. An
 // automated browser (the tests, a link preview) goes straight in; ?gate=1 keeps the gate there too.
-const GATE=!navigator.webdriver||/[?&]gate=1/.test(location.search), enterBtn=$("#enter"), muteBtn=$("#enter-muted");
+const GATE=false, enterBtn=$("#enter"), muteBtn=$("#enter-muted");
+enterBtn?.remove(); muteBtn?.remove();
+addEventListener("pointerdown",()=>gesture(),{once:true});
+addEventListener("keydown",()=>gesture(),{once:true});
 const GATE_SKIP=/^(Tab|Shift|Control|Alt|AltGraph|Meta|OS|CapsLock|NumLock|ScrollLock|Escape|Fn|FnLock|ContextMenu|Unidentified|Dead|F\d+|Audio\w*|Media\w*|Volume\w*|Browser\w*)$/;
 function gateUp(){
   if(MEM.lost) return;   // the browser took the room's graphics away: the next tap is the reload card's (perf/mem)

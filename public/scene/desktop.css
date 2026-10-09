@@ -30,9 +30,7 @@ html.bm-scene,html.bm-scene body{height:100%;margin:0;overflow:hidden;background
    screen glows on its own in the middle of the window (.free; .glide: it moves when the still comes or goes after it's
    up). As the room comes in (.out), a burst of static takes the picture off and the glass and its light on the room fade,
    the room's own TV under them; a screen on its own switches off like a CRT */
-#still,#osd{container-type:size;--k:calc(100cqh/1066)}
-#osd{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .35s ease}
-#osd.on{opacity:1}
+#still,#osd{container-type:size;--k:calc(100cqh/1066);display:none!important;opacity:0!important;pointer-events:none!important}
 #osd .tv-scr{position:absolute;left:calc(50% - 182*var(--k));top:calc(475.2*var(--k));width:calc(309.3*var(--k));height:calc(231.2*var(--k));
   border-radius:calc(4*var(--k));overflow:hidden;container-type:size;transform:var(--warp,none)}
 #osd.free .tv-scr{left:50%;top:48%;width:min(84vw,calc(58vh*4/3),600px);height:min(63vw,58vh,450px);transform:translate(-50%,-50%);border-radius:3%/4%;

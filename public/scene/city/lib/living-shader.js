@@ -422,26 +422,28 @@ float winState(float id, out float tv){
   return 1.-s;
 }`;
 
-export function livingFragment({ BH, parallax = false, win = { y0: 1667, y1: 2112 }, strip = [], depthMap = false, weather = false, mist = false }) {
+export function livingFragment({ BH, parallax = false, win = { y0: 1667, y1: 2112 }, strip = [], depthMap = false, weather = false, mist = false, skyFade = false }) {
   const on = k => !strip.includes(k);   // strip: blocks to leave out, for profiling and taste
   depthMap = depthMap && parallax; weather = weather && parallax; mist = mist && parallax;   // they need the 3D point
   return /* glsl */`
 varying vec3 vP;
+uniform float uBrightness;
+uniform float uPan;
 ${head(BH, parallax, { depthMap, weather, mist })}
 ${WIN_STATE}
 
 void main(){
   vec2 uv;
   ${parallax ? rayUV(true, depthMap) : `
-  uv=vec2(.5+atan(vP.x,-vP.z)*30./47.,vP.y/BH+.6);`}${(weather || mist) && !depthMap ? `
+  uv=vec2(.5+(atan(vP.x,-vP.z)*30./47.)+uPan,vP.y/BH+.6);`}${(weather || mist) && !depthMap ? `
   float dPix=depthAt(uv);` : ""}
   vec2 mu=vec2(1.-abs(mod(uv.x,2.)-1.),clamp(uv.y,.002,.998));
   vec3 c=mix(SKY,texture2D(map,mu).rgb,uPhoto);
-  c=mix(c,SKY,smoothstep(.93,1.05,uv.y));
+  ${skyFade ? `c=mix(c,SKY,smoothstep(.93,1.05,uv.y));` : ""}
   vec2 P=vec2(mu.x*3840.,(1.-mu.y)*3201.);             // photo px (y down), clamped to the photo
 ${backdropBody({ on, win, weather, mist })}
 
-  c*=vec3(.93,.97,1.06);
+  c *= uBrightness;
   gl_FragColor=vec4(c,1.);
 }`;
 }
@@ -502,8 +504,7 @@ ${on("shimmer") ? `
   // bright lights shimmer through the rain (the shipped highlight lift, with baked noise instead of hashing)
   float l=dot(c,vec3(.3,.59,.11));
   if(l>.35) c=c*.95+c*smoothstep(.35,1.,l)*2.2*(.85+.3*texture2D(noiseTex,vec2(uv.x*112.5,uv.y*62.5+uDrift.x)).r)${weather ? "*(1.+.4*uWx.x)" : ""};
-  else c*=.95;` : `
-  float l=dot(c,vec3(.3,.59,.11)); c=c*.95+c*smoothstep(.35,1.,l)*2.2;`}
+  else c*=.95;` : ""}
 ${on("sky") ? `
   // low cloud over the skyline, lit from below by the city: two layers drifting at different speeds. They are
   // small enough that the patch of sky seen from the desk always holds several, so the window's mean stays put

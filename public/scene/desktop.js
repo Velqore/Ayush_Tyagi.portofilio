@@ -12,7 +12,7 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { createCity as cityDepth } from "./city/variants/depth.js";   // the living city, with depth: the only window since Felix's 16:21Z
+import { createCity as createCityLiving } from "./city/variants/living.js";
 import { nightLife } from "./city/lib/night.js";
 import { createNotepad } from "./notepad/notepad.js";
 import { winUV, winPaint } from "./winframe/winframe.js";   // the window's frame and sill: an atlas of their own, clean satin paint (thread "Window frame texture")
@@ -100,15 +100,18 @@ const EXP = 2;    // Experience (SIFS Lab, Beyond Evidence)
 const EDU = 2;    // Education (KR Mangalam Univ, KSK Academy)
 const JOBS = EXP + EDU; // the left-hand stack on the shelf: 4 tapes
 const CH_IDS = ["sifs","beyond","krmu","ksk","pratyaksh","aurex","cyberrepo","osint","toolkit","cryptovault","casefiles"];
-const CH_SRC = {};
+const CH_SRC = { pratyaksh: "pratyaksh", aurex: "aurex" };
 const channels = [];
 const NOMUSIC = new Set(["slack","slack/xray","electron","clippy","lmb","lmb/hero","windows95","macintosh"]);
 const chPath = p => NOMUSIC.has(p)?p+".nomusic":p;
-const chLoad = p => import(`${CHANNEL_BASE}${chPath(p)}.js`).catch(e=>{ if(chPath(p)===p) throw e; return import(`${CHANNEL_BASE}${p}.js`); });
+const chLoad = p => import(`./channels/${chPath(p)}.js`).catch(e=>{
+  if(CHANNEL_BASE) return import(`${CHANNEL_BASE}${chPath(p)}.js`);
+  throw e;
+});
 const chReady = Promise.all(CH_IDS.map((id,i)=>{
   const src = CH_SRC[id];
   if(!src) return Promise.resolve();
-  return chLoad(src).then(m=>{ channels[i]=m.default; }).catch(()=>{});
+  return chLoad(src).then(m=>{ channels[i]=m.default; }).catch(err=>console.warn("chLoad error",id,err));
 }));
 const POSTS = (window.__BM&&window.__BM.posts&&window.__BM.posts.length)?window.__BM.posts:[
   {"t": "Forensic Science in the Digital Era", "u": "https://www.linkedin.com/in/ayush-tyagi-96b3b7350/recent-activity/all/", "d": "02 Oct 2026"},
@@ -717,16 +720,18 @@ vec3 lin(vec3 c){return pow(c,vec3(2.2));}
 // 47 m and mirrors outward. Subtle life: drifting low cloud lit by sodium light, crane and tower
 // beacons, lights shimmering through the rain, and an S-Bahn now and then coming up the tracks.
 const BH=47*3201/3840, BZ0=1.3-.381*BH;
-// The city itself lives in city/: the photo, its windows lit and switched off one by one, beacons, cars, trains
-// and planes, and the rain, all on the GPU; "with depth" parallaxes the layers on a depth map and adds more trains,
-// showers that come and go, and mist over the yard (city/README.md). It is the only window since Felix's 16:21Z.
-// The photo's path is given here, with the page's other assets, so a host that moves them (the Ghost theme) finds it.
-let city=cityDepth(THREE,{scene,renderer,loader:new THREE.TextureLoader(),BH,BZ0,photo:SCENE_BASE+"tex/berlin.jpg"});
+let city=createCityLiving(THREE,{
+  scene,renderer,loader:new THREE.TextureLoader(),BH,BZ0,
+  photo:SCENE_BASE+"tex/berlin.jpg",
+  rain:false,
+  trains:true,
+  skyFade:false
+});
 
 // ======================================================================= lights
 scene.add(new THREE.HemisphereLight("#3a4a7a","#2a1a0c",.14));
 const fill=new THREE.PointLight("#ffcf9a",.3,4,1.5); fill.position.set(-.7,1.35,1.3); scene.add(fill);
-const moon=new THREE.DirectionalLight("#8aa2e6",1.0);
+const moon=new THREE.DirectionalLight("#8aa2e6",0.5);
 moon.position.set(1.8,4.2,-5); moon.target.position.set(0,.8,0); scene.add(moon,moon.target);
 moon.castShadow=true; moon.shadow.mapSize.set(2048,2048); Object.assign(moon.shadow.camera,{left:-1.6,right:1.6,top:1.6,bottom:-1.6,near:1,far:12}); moon.shadow.bias=-.0006; moon.shadow.normalBias=.02; moon.shadow.radius=3;
 const lampSpot=new THREE.SpotLight("#ffb56b",3.4,3,1.0,.7,1.6);
@@ -1118,7 +1123,7 @@ loadScene(gltf=>osdPaint(2).then(()=>clockP).then(()=>{
     if(mname==="ir"){ remoteIR=o; o.material=ownMaterial(o.material); }
     if(mname==="window_glass"){
       o.castShadow=false; o.receiveShadow=false;
-      o.material=n.startsWith("win_out")?rainGlass():new THREE.MeshPhysicalMaterial({color:"#dfe6ff",transparent:true,opacity:.07,roughness:.04,depthWrite:false});
+      o.material=new THREE.MeshPhysicalMaterial({color:"#dfe6ff",transparent:true,opacity:.04,roughness:.02,depthWrite:false});
       o.renderOrder=5; noDepth.push(o);
       if(n.startsWith("win_in")) interact.set(o,{kind:"window",label:"LOOK OUTSIDE"});
     }
@@ -1827,7 +1832,7 @@ for(let i=0;i<DN;i++){dp[i*3]=-.75+Math.random()*1.1;dp[i*3+1]=.8+Math.random()*
 dustGeo.setAttribute("position",new THREE.BufferAttribute(dp,3));
 const moteTex=canvasTex(32,32,g=>{ const r=g.createRadialGradient(16,16,0,16,16,16); r.addColorStop(0,"rgba(255,255,255,1)"); r.addColorStop(.35,"rgba(255,255,255,.55)"); r.addColorStop(1,"rgba(255,255,255,0)"); g.fillStyle=r; g.fillRect(0,0,32,32); });
 const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:"#ffd7a6",size:.0034,map:moteTex,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending}));
-scene.add(dust); noDepth.push(dust,city.rain.mesh); 
+scene.add(dust); if(city.rain?.mesh) noDepth.push(dust,city.rain.mesh); else noDepth.push(dust); 
 
 // ======================================================================= post: bloom, lens
 // AO and light are baked, so no GTAO; no depth of field either (it read as blur). MSAA on the
@@ -2151,7 +2156,7 @@ async function loadStems(){
   await clockP;   // (the room's background comes from the clock's folder when it's there)
   const ctx=A.ctx;
   // field recordings from freesound.org (credits in the Credits panel); one-shots feed the VCR and CRT
-  const spec={rain:{gain:RAIN,dest:()=>A.master},city:{gain:1.5,dest:()=>A.window},room:{gain:.8,dest:()=>A.master,url:clockMod?.ROOM_URL},sbahn:{gain:1,dest:()=>A.window,oneShot:true},
+  const spec={rain:{gain:0,dest:()=>A.master},city:{gain:1.5,dest:()=>A.window},room:{gain:.8,dest:()=>A.master,url:clockMod?.ROOM_URL},sbahn:{gain:0,dest:()=>A.window,oneShot:true},
     vcr_insert:{fx:1},vcr_eject:{fx:1},crt_on:{fx:1},button_click:{fx:1},channel_static:{fx:1}};
   await Promise.all(Object.entries(spec).map(async([k,s])=>{
     try{ const buf=await memDecode(ctx,await (await fetch(s.url||`${SCENE_BASE}audio2/${k}.mp3`)).arrayBuffer(),s.dest?.()===A.window);   // (perf/mem)
@@ -3227,8 +3232,7 @@ function frame(now){
   const rm=city.rain?.mesh?.material; if(rm){ const u=rm.uniforms?.uOpacity, b=rm.userData.base??=(u?u.value:rm.opacity); if(u) u.value=b*rainK; else rm.opacity=b*rainK; }
   if(now>trainNext){ trainNext=now+(42000+Math.random()*25000)*cityLife.trainGap; trainOn=now; playTrain(); }
   city.update(T,dt,{trainT:trainOn?(now-trainOn)/1000:-1,camera:view,life:cityLife});
-  // the rain sound follows the depth window's showers (city.weather: 0 a drizzle .. 1 a downpour; null for the others)
-  if(A.rainGain&&now-(A.rainT||0)>500){ A.rainT=now; const w=city.weather; A.rainGain.gain.setTargetAtTime(RAIN*(w==null?1:.65+.7*w),A.ctx.currentTime,2); }
+  if(A.rainGain) A.rainGain.gain.value=0;
   steam.forEach(s=>{ const p=(s.userData.ph+T*.09)%1; s.position.set(MUG.x+Math.sin(T*.7+p*9)*.012*p*3,MUG.y+p*.2,MUG.z+Math.cos(T*.5+p*7)*.01*p*3);
     s.scale.setScalar(.02+p*.07); s.material.opacity=Math.sin(p*Math.PI)*.15*(coffee?coffee.steam:1); s.visible=!coffee||coffee.steam>0; s.material.rotation=p*2+s.userData.ph*6; });
   const dA=dustGeo.attributes.position.array;

@@ -18,19 +18,21 @@ export const WIN = { y0: 1667, y1: 2112 };      // rows of berlin.jpg covered by
 export const HOME_EYE = [-0.1845, 1.2727, 1.7469];
 
 export function createCity(THREE, { scene, renderer, loader, BH, BZ0, photo = "./tex/berlin.jpg", rain = true, renderOrder = 1, parallax = false, eye = null, strip = [],
-  depthMap = false, trains = false, weather = false, mist = false, reds = false }) {
+  depthMap = false, trains = false, weather = false, mist = false, reds = false, brightness = 0.65, pan = -0.13, skyFade = false }) {
   loader = loader || new THREE.TextureLoader();
   // the extras that need the 3D point of each pixel come only with parallax (the photo's own lights with the depth map)
   const feat = { depthMap: depthMap && parallax, trains, weather: weather && parallax, mist: mist && parallax, reds: reds && depthMap && parallax };
   const extras = Object.values(feat).some(Boolean) ? feat : null;
   const noise = bakeNoise(THREE, renderer);
   const ph = lateTexture(THREE, loader, photo, { srgb: true, aniso: 8, dur: 1.2 });
-  const win = lateTexture(THREE, loader, assetUrl("windows.png"), { flipY: false, mip: false, dur: 2 });
+  const win = strip.includes("win") ? { promise: Promise.resolve(null), update: () => 0, tex: null } : lateTexture(THREE, loader, assetUrl("windows.png"), { flipY: false, mip: false, dur: 2 });
   const dm = feat.depthMap ? lateTexture(THREE, loader, assetUrl("depth.png"), { flipY: false, mip: false }) : null;
   const U = {
     map: { value: null }, noiseTex: { value: noise.texture }, winTex: { value: null },
     T: { value: 0 }, uPhoto: { value: 0 }, uWin: { value: 0 }, uNoise: { value: 1 },
     uEye: { value: new THREE.Vector3(...(eye || HOME_EYE)) },
+    uBrightness: { value: brightness },
+    uPan: { value: pan },
     ...makeUniforms(THREE, feat),
     ...(dm ? { depthTex: { value: null } } : {}),
   };
@@ -38,7 +40,7 @@ export function createCity(THREE, { scene, renderer, loader, BH, BZ0, photo = ".
     uniforms: U, side: THREE.BackSide, depthWrite: true,
     vertexShader: `varying vec3 vP; varying vec3 vW;
       void main(){ vP=position; vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`,
-    fragmentShader: livingFragment({ BH, parallax, win: WIN, strip, ...feat }),
+    fragmentShader: livingFragment({ BH, parallax, win: WIN, strip, skyFade, ...feat }),
   });
   const backdrop = new THREE.Mesh(cylinderGeometry(THREE, BH), mat);
   placeCylinder(backdrop, BH, BZ0);

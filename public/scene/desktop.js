@@ -2606,7 +2606,7 @@ const CREDITS=[
 ];
 const CC0=[["SignatureSoundsOrg","869851"],["photogtony","242008"],["qubodup","737955"],["matrixx2k","745241"],["Sanderboah","838726"],["Fission9","693859"],["Warrick_Lendon","542635"],["nodzSound","506536"]];
 // Special thanks — people who shaped this room with their direction and feedback
-const FELIX={name:"Felix Reiseberg",url:"https://github.com/felixrieseberg",role:"Design direction, UX feedback, and loading screen concept"};
+const FELIX={name:"Ayush Tyagi",url:"https://github.com/Velqore/",role:"Design direction, UX feedback, and loading screen concept"};
 const extLink=(u,t)=>`<a href="${u}" target="_blank" rel="noopener">${esc(t)}</a>`;
 // On a desktop the card from the card file floats up with the credits typed on it; the sheet's HTML stays in the page, out of
 // sight, for keyboards and screen readers, and the link the keys are on is marked on the card

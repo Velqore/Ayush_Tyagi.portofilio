@@ -12,6 +12,7 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="/scene/tex/still.jpg" as="image" fetchpriority="high">
   <link rel="preload" href="/scene/boot.js" as="script">
   <link rel="preload" href="/scene/desktop.css" as="style">
   <link rel="modulepreload" href="/scene/desktop.js">
@@ -61,8 +62,8 @@
 </nav>
 
 <template id="bm-desktop">
-  <div id="still" aria-hidden="true" style="display:none!important;"><div class="tv-spill"><i></i></div></div>
-  <div id="osd" aria-hidden="true" style="display:none!important;">
+  <div id="still" class="on" aria-hidden="true" style="background-image: url('/scene/tex/still.jpg');"><div class="tv-spill"><i></i></div></div>
+  <div id="osd" aria-hidden="true">
     <div class="tv-scr">
       <div class="tv-pic">
         <div class="tv-lb">▶▶ LOADING</div>
